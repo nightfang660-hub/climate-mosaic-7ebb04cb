@@ -5,6 +5,20 @@ export interface WeatherData {
   pressure: number;
   rainfall: number;
   cloudCover: number;
+  feelsLike: number;
+  uvIndex: number;
+  visibility: number;
+  sunrise: string;
+  sunset: string;
+  weatherCode: number;
+}
+
+export interface HourlyForecastData {
+  time: string;
+  temperature: number;
+  precipitation: number;
+  windSpeed: number;
+  weatherCode: number;
 }
 
 export interface ForecastData {
@@ -24,7 +38,7 @@ export interface GeocodingResult {
  * Fetch current weather data from Open-Meteo API
  */
 export const fetchWeatherData = async (lat: number, lon: number): Promise<WeatherData> => {
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,pressure_msl,cloud_cover,wind_speed_10m&timezone=auto`;
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,pressure_msl,cloud_cover,wind_speed_10m,uv_index,visibility,weather_code&daily=sunrise,sunset&timezone=auto`;
   
   const response = await fetch(url);
   if (!response.ok) {
@@ -33,6 +47,7 @@ export const fetchWeatherData = async (lat: number, lon: number): Promise<Weathe
   
   const data = await response.json();
   const current = data.current;
+  const daily = data.daily;
   
   return {
     temperature: current.temperature_2m,
@@ -41,6 +56,12 @@ export const fetchWeatherData = async (lat: number, lon: number): Promise<Weathe
     pressure: current.pressure_msl,
     rainfall: current.precipitation,
     cloudCover: current.cloud_cover,
+    feelsLike: current.apparent_temperature,
+    uvIndex: current.uv_index,
+    visibility: current.visibility / 1000, // Convert to km
+    sunrise: daily.sunrise[0],
+    sunset: daily.sunset[0],
+    weatherCode: current.weather_code,
   };
 };
 
@@ -94,6 +115,30 @@ export const geocodeCity = async (cityName: string): Promise<GeocodingResult | n
     longitude: result.longitude,
     country: result.country,
   };
+};
+
+/**
+ * Fetch 24-hour hourly forecast from Open-Meteo API
+ */
+export const fetchHourlyForecast = async (lat: number, lon: number): Promise<HourlyForecastData[]> => {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,wind_speed_10m,weather_code&timezone=auto&forecast_days=2`;
+  
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Failed to fetch hourly forecast data");
+  }
+  
+  const data = await response.json();
+  const hourly = data.hourly;
+  
+  // Get next 24 hours
+  return hourly.time.slice(0, 24).map((time: string, index: number) => ({
+    time: new Date(time).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }),
+    temperature: hourly.temperature_2m[index],
+    precipitation: hourly.precipitation[index],
+    windSpeed: hourly.wind_speed_10m[index],
+    weatherCode: hourly.weather_code[index],
+  }));
 };
 
 /**
