@@ -4,17 +4,21 @@ import { SearchBox } from "@/components/SearchBox";
 import { WeatherMap } from "@/components/WeatherMap";
 import { WeatherTable } from "@/components/WeatherTable";
 import { ForecastChart } from "@/components/ForecastChart";
+import { HourlyForecast } from "@/components/HourlyForecast";
+import { SavedLocations } from "@/components/SavedLocations";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import {
   fetchWeatherData,
   fetchForecastData,
+  fetchHourlyForecast,
   geocodeCity,
   getUserLocation,
   type WeatherData,
   type ForecastData,
+  type HourlyForecastData,
 } from "@/lib/weather-api";
-import { Menu } from "lucide-react";
+import { Menu, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
@@ -25,6 +29,8 @@ const Index = () => {
   });
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [forecastData, setForecastData] = useState<ForecastData[]>([]);
+  const [hourlyData, setHourlyData] = useState<HourlyForecastData[]>([]);
+  const [locationName, setLocationName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { toast } = useToast();
@@ -34,12 +40,25 @@ const Index = () => {
     const loadWeatherData = async () => {
       setLoading(true);
       try {
-        const [weather, forecast] = await Promise.all([
+        const [weather, forecast, hourly] = await Promise.all([
           fetchWeatherData(location.lat, location.lon),
           fetchForecastData(location.lat, location.lon),
+          fetchHourlyForecast(location.lat, location.lon),
         ]);
         setWeatherData(weather);
         setForecastData(forecast);
+        setHourlyData(hourly);
+        
+        // Reverse geocode to get location name
+        const geocodeUrl = `https://geocoding-api.open-meteo.com/v1/search?latitude=${location.lat}&longitude=${location.lon}&count=1`;
+        const geocodeResponse = await fetch(geocodeUrl);
+        if (geocodeResponse.ok) {
+          const geocodeData = await geocodeResponse.json();
+          if (geocodeData.results && geocodeData.results.length > 0) {
+            const result = geocodeData.results[0];
+            setLocationName(`${result.name}, ${result.country}`);
+          }
+        }
       } catch (error) {
         toast({
           title: "Error",
@@ -74,6 +93,7 @@ const Index = () => {
       const result = await geocodeCity(cityName);
       if (result) {
         setLocation({ lat: result.latitude, lon: result.longitude });
+        setLocationName(`${result.name}, ${result.country}`);
         toast({
           title: "Location updated",
           description: `Showing weather for ${result.name}, ${result.country}`,
@@ -124,16 +144,33 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="flex-1 p-6 md:p-8 space-y-6 overflow-auto">
-        {/* Search Bar */}
-        <div className="max-w-md">
-          <SearchBox onSearch={handleSearch} />
+        {/* Header with Location and Search */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <MapPin className="w-5 h-5 text-primary" />
+            <div>
+              <h2 className="text-2xl font-bold">{locationName || "Loading location..."}</h2>
+              <p className="text-sm text-muted-foreground">
+                {location.lat.toFixed(4)}°, {location.lon.toFixed(4)}°
+              </p>
+            </div>
+          </div>
+          <div className="max-w-md w-full md:w-auto">
+            <SearchBox onSearch={handleSearch} />
+          </div>
         </div>
 
         {/* Forecast View */}
         {activeView === "forecast" && (
           <>
             <WeatherTable data={weatherData} loading={loading} />
+            <HourlyForecast data={hourlyData} loading={loading} />
             <ForecastChart data={forecastData} loading={loading} />
+            <SavedLocations 
+              currentLocation={location} 
+              onLocationSelect={(lat, lon) => setLocation({ lat, lon })}
+              currentLocationName={locationName}
+            />
           </>
         )}
 
@@ -149,24 +186,101 @@ const Index = () => {
 
         {/* Climate Info */}
         {activeView === "climate" && (
-          <Card className="p-6 bg-card space-y-4">
+          <Card className="p-6 bg-card space-y-6">
             <h2 className="text-2xl font-bold">Climate Information</h2>
-            <div className="space-y-4 text-muted-foreground">
-              <p>
-                This dashboard uses free weather APIs including Open-Meteo to provide
-                real-time weather data and forecasts.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold text-foreground">Current Location</h3>
-                  <p>Latitude: {location.lat.toFixed(4)}°</p>
-                  <p>Longitude: {location.lon.toFixed(4)}°</p>
+            
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                Current Location
+              </h3>
+              <div className="space-y-2">
+                <p className="text-lg font-medium">{locationName || "Unknown location"}</p>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Latitude:</span>
+                    <span className="ml-2 font-mono">{location.lat.toFixed(6)}°</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Longitude:</span>
+                    <span className="ml-2 font-mono">{location.lon.toFixed(6)}°</span>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold text-foreground">Data Sources</h3>
-                  <p>• Open-Meteo API (Weather & Forecast)</p>
-                  <p>• OpenStreetMap (Map Tiles)</p>
-                  <p>• Browser Geolocation API</p>
+              </div>
+            </div>
+
+            {weatherData && (
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <h3 className="text-xl font-semibold mb-3">Current Conditions Summary</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border">
+                        <th className="text-left py-2 px-3">Metric</th>
+                        <th className="text-right py-2 px-3">Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 px-3 text-muted-foreground">Temperature</td>
+                        <td className="py-2 px-3 text-right font-medium">{weatherData.temperature.toFixed(1)}°C</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 px-3 text-muted-foreground">Feels Like</td>
+                        <td className="py-2 px-3 text-right font-medium">{weatherData.feelsLike.toFixed(1)}°C</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 px-3 text-muted-foreground">Humidity</td>
+                        <td className="py-2 px-3 text-right font-medium">{weatherData.humidity}%</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 px-3 text-muted-foreground">Wind Speed</td>
+                        <td className="py-2 px-3 text-right font-medium">{weatherData.windSpeed.toFixed(1)} km/h</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 px-3 text-muted-foreground">Pressure</td>
+                        <td className="py-2 px-3 text-right font-medium">{weatherData.pressure.toFixed(0)} hPa</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 px-3 text-muted-foreground">UV Index</td>
+                        <td className="py-2 px-3 text-right font-medium">{weatherData.uvIndex.toFixed(1)}</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 px-3 text-muted-foreground">Visibility</td>
+                        <td className="py-2 px-3 text-right font-medium">{weatherData.visibility.toFixed(1)} km</td>
+                      </tr>
+                      <tr className="border-b border-border/50">
+                        <td className="py-2 px-3 text-muted-foreground">Cloud Cover</td>
+                        <td className="py-2 px-3 text-right font-medium">{weatherData.cloudCover}%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <h3 className="text-xl font-semibold">Data Sources</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">Weather Data</h4>
+                  <p className="text-sm text-muted-foreground">Open-Meteo API</p>
+                  <p className="text-xs text-muted-foreground mt-1">Real-time weather & forecasts</p>
+                </div>
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">Map Tiles</h4>
+                  <p className="text-sm text-muted-foreground">OpenStreetMap</p>
+                  <p className="text-xs text-muted-foreground mt-1">Interactive map display</p>
+                </div>
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">Geolocation</h4>
+                  <p className="text-sm text-muted-foreground">Browser API</p>
+                  <p className="text-xs text-muted-foreground mt-1">Auto-detect your location</p>
+                </div>
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <h4 className="font-semibold mb-2">Geocoding</h4>
+                  <p className="text-sm text-muted-foreground">Open-Meteo Geocoding</p>
+                  <p className="text-xs text-muted-foreground mt-1">City name to coordinates</p>
                 </div>
               </div>
             </div>
