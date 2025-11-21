@@ -141,6 +141,135 @@ export const fetchHourlyForecast = async (lat: number, lon: number): Promise<Hou
   }));
 };
 
+export interface HistoricalWeatherData {
+  date: string;
+  temperature: number;
+  humidity: number;
+  precipitation: number;
+}
+
+export interface WeatherAlert {
+  id: string;
+  severity: 'info' | 'warning' | 'severe';
+  title: string;
+  description: string;
+  metric: string;
+  value: number;
+}
+
+/**
+ * Fetch historical weather data from Open-Meteo API
+ */
+export const fetchHistoricalWeather = async (
+  lat: number,
+  lon: number,
+  days: number = 7
+): Promise<HistoricalWeatherData[]> => {
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+
+  const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${formatDate(startDate)}&end_date=${formatDate(endDate)}&daily=temperature_2m_mean,relative_humidity_2m_mean,precipitation_sum&timezone=auto`;
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Failed to fetch historical weather data");
+  }
+
+  const data = await response.json();
+  const daily = data.daily;
+
+  return daily.time.map((date: string, index: number) => ({
+    date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    temperature: daily.temperature_2m_mean[index],
+    humidity: daily.relative_humidity_2m_mean[index],
+    precipitation: daily.precipitation_sum[index],
+  }));
+};
+
+/**
+ * Analyze weather data for alerts
+ */
+export const analyzeWeatherAlerts = (weather: WeatherData): WeatherAlert[] => {
+  const alerts: WeatherAlert[] = [];
+
+  // High temperature alert
+  if (weather.temperature > 35) {
+    alerts.push({
+      id: 'high-temp',
+      severity: weather.temperature > 40 ? 'severe' : 'warning',
+      title: 'High Temperature Alert',
+      description: `Extreme heat detected. Temperature is ${weather.temperature.toFixed(1)}°C`,
+      metric: 'Temperature',
+      value: weather.temperature,
+    });
+  }
+
+  // Low temperature alert
+  if (weather.temperature < 0) {
+    alerts.push({
+      id: 'low-temp',
+      severity: weather.temperature < -10 ? 'severe' : 'warning',
+      title: 'Freezing Temperature Alert',
+      description: `Freezing conditions detected. Temperature is ${weather.temperature.toFixed(1)}°C`,
+      metric: 'Temperature',
+      value: weather.temperature,
+    });
+  }
+
+  // High wind speed alert
+  if (weather.windSpeed > 50) {
+    alerts.push({
+      id: 'high-wind',
+      severity: weather.windSpeed > 80 ? 'severe' : 'warning',
+      title: 'High Wind Alert',
+      description: `Strong winds detected. Wind speed is ${weather.windSpeed.toFixed(1)} km/h`,
+      metric: 'Wind Speed',
+      value: weather.windSpeed,
+    });
+  }
+
+  // Heavy rainfall alert
+  if (weather.rainfall > 10) {
+    alerts.push({
+      id: 'heavy-rain',
+      severity: weather.rainfall > 50 ? 'severe' : 'warning',
+      title: 'Heavy Rainfall Alert',
+      description: `Heavy precipitation detected. Rainfall is ${weather.rainfall.toFixed(1)} mm`,
+      metric: 'Rainfall',
+      value: weather.rainfall,
+    });
+  }
+
+  // High UV index alert
+  if (weather.uvIndex > 8) {
+    alerts.push({
+      id: 'high-uv',
+      severity: weather.uvIndex > 11 ? 'severe' : 'warning',
+      title: 'High UV Index Alert',
+      description: `Extreme UV levels detected. UV index is ${weather.uvIndex.toFixed(1)}`,
+      metric: 'UV Index',
+      value: weather.uvIndex,
+    });
+  }
+
+  // Low visibility alert
+  if (weather.visibility < 1) {
+    alerts.push({
+      id: 'low-visibility',
+      severity: weather.visibility < 0.5 ? 'severe' : 'warning',
+      title: 'Low Visibility Alert',
+      description: `Poor visibility conditions. Visibility is ${weather.visibility.toFixed(1)} km`,
+      metric: 'Visibility',
+      value: weather.visibility,
+    });
+  }
+
+  return alerts;
+};
+
 /**
  * Get user's current location using browser geolocation API
  */

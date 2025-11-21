@@ -1,9 +1,9 @@
-import { MapPin, Calendar, Info } from "lucide-react";
+import { MapPin, Calendar, Info, TrendingUp, Split } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
-  activeView: "forecast" | "map" | "climate";
-  onViewChange: (view: "forecast" | "map" | "climate") => void;
+  activeView: "forecast" | "map" | "climate" | "historical" | "comparison";
+  onViewChange: (view: "forecast" | "map" | "climate" | "historical" | "comparison") => void;
 }
 
 export const Sidebar = ({ activeView, onViewChange }: SidebarProps) => {
@@ -11,6 +11,8 @@ export const Sidebar = ({ activeView, onViewChange }: SidebarProps) => {
     { id: "forecast" as const, label: "Forecast", icon: Calendar },
     { id: "map" as const, label: "Map View", icon: MapPin },
     { id: "climate" as const, label: "Climate Info", icon: Info },
+    { id: "historical" as const, label: "Historical Data", icon: TrendingUp },
+    { id: "comparison" as const, label: "Compare Locations", icon: Split },
   ];
 
   return (

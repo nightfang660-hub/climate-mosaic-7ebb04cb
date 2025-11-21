@@ -6,23 +6,30 @@ import { WeatherTable } from "@/components/WeatherTable";
 import { ForecastChart } from "@/components/ForecastChart";
 import { HourlyForecast } from "@/components/HourlyForecast";
 import { SavedLocations } from "@/components/SavedLocations";
+import { HistoricalChart } from "@/components/HistoricalChart";
+import { WeatherComparison } from "@/components/WeatherComparison";
+import { WeatherAlerts } from "@/components/WeatherAlerts";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import {
   fetchWeatherData,
   fetchForecastData,
   fetchHourlyForecast,
+  fetchHistoricalWeather,
+  analyzeWeatherAlerts,
   geocodeCity,
   getUserLocation,
   type WeatherData,
   type ForecastData,
   type HourlyForecastData,
+  type HistoricalWeatherData,
+  type WeatherAlert,
 } from "@/lib/weather-api";
 import { Menu, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
-  const [activeView, setActiveView] = useState<"forecast" | "map" | "climate">("forecast");
+  const [activeView, setActiveView] = useState<"forecast" | "map" | "climate" | "historical" | "comparison">("forecast");
   const [location, setLocation] = useState<{ lat: number; lon: number }>({
     lat: 17.385,
     lon: 78.4867,
@@ -30,6 +37,8 @@ const Index = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [forecastData, setForecastData] = useState<ForecastData[]>([]);
   const [hourlyData, setHourlyData] = useState<HourlyForecastData[]>([]);
+  const [historicalData, setHistoricalData] = useState<HistoricalWeatherData[]>([]);
+  const [weatherAlerts, setWeatherAlerts] = useState<WeatherAlert[]>([]);
   const [locationName, setLocationName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,14 +49,20 @@ const Index = () => {
     const loadWeatherData = async () => {
       setLoading(true);
       try {
-        const [weather, forecast, hourly] = await Promise.all([
+        const [weather, forecast, hourly, historical] = await Promise.all([
           fetchWeatherData(location.lat, location.lon),
           fetchForecastData(location.lat, location.lon),
           fetchHourlyForecast(location.lat, location.lon),
+          fetchHistoricalWeather(location.lat, location.lon, 7),
         ]);
         setWeatherData(weather);
         setForecastData(forecast);
         setHourlyData(hourly);
+        setHistoricalData(historical);
+        
+        // Analyze for weather alerts
+        const alerts = analyzeWeatherAlerts(weather);
+        setWeatherAlerts(alerts);
         
         // Reverse geocode to get location name
         const geocodeUrl = `https://geocoding-api.open-meteo.com/v1/search?latitude=${location.lat}&longitude=${location.lon}&count=1`;
@@ -163,6 +178,7 @@ const Index = () => {
         {/* Forecast View */}
         {activeView === "forecast" && (
           <>
+            {weatherAlerts.length > 0 && <WeatherAlerts alerts={weatherAlerts} />}
             <WeatherTable data={weatherData} loading={loading} />
             <HourlyForecast data={hourlyData} loading={loading} />
             <ForecastChart data={forecastData} loading={loading} />
@@ -182,6 +198,26 @@ const Index = () => {
               onMapClick={handleMapClick}
             />
           </Card>
+        )}
+
+        {/* Historical Data View */}
+        {activeView === "historical" && (
+          <>
+            <HistoricalChart data={historicalData} loading={loading} />
+            <Card className="p-6 bg-card">
+              <h3 className="text-xl font-semibold mb-4">About Historical Data</h3>
+              <p className="text-muted-foreground">
+                Historical weather data shows trends over the past 7 days, including temperature,
+                humidity, and precipitation patterns. This data can help you understand recent
+                weather patterns and trends in your selected location.
+              </p>
+            </Card>
+          </>
+        )}
+
+        {/* Comparison View */}
+        {activeView === "comparison" && (
+          <WeatherComparison />
         )}
 
         {/* Climate Info */}
