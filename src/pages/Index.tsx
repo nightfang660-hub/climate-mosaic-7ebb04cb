@@ -45,6 +45,7 @@ const Index = () => {
   const [locationName, setLocationName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const { toast } = useToast();
 
   // Fetch weather data when location changes
@@ -162,40 +163,46 @@ const Index = () => {
   return (
     <div className="flex min-h-screen bg-background">
       {/* Mobile Menu Button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="fixed top-4 left-4 z-50 md:hidden"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-      >
-        <Menu className="w-6 h-6" />
-      </Button>
+      {!isMapFullscreen && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="fixed top-4 left-4 z-50 md:hidden"
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+        >
+          <Menu className="w-6 h-6" />
+        </Button>
+      )}
 
-      {/* Sidebar */}
-      <div className={`${sidebarOpen ? "block" : "hidden"} md:block fixed md:relative inset-0 z-40 md:z-0`}>
-        <Sidebar activeView={activeView} onViewChange={(view) => {
-          setActiveView(view);
-          setSidebarOpen(false);
-        }} />
-      </div>
+      {/* Sidebar - Hidden in fullscreen mode */}
+      {!isMapFullscreen && (
+        <div className={`${sidebarOpen ? "block" : "hidden"} md:block fixed md:relative inset-0 z-40 md:z-0`}>
+          <Sidebar activeView={activeView} onViewChange={(view) => {
+            setActiveView(view);
+            setSidebarOpen(false);
+          }} />
+        </div>
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 p-6 md:p-8 space-y-6 overflow-auto">
-        {/* Header with Location and Search */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-primary" />
-            <div>
-              <h2 className="text-2xl font-bold">{locationName || "Loading location..."}</h2>
-              <p className="text-sm text-muted-foreground">
-                {location.lat.toFixed(4)}°, {location.lon.toFixed(4)}°
-              </p>
+      <main className={`flex-1 ${isMapFullscreen ? 'p-0' : 'p-6 md:p-8'} space-y-6 overflow-auto`}>
+        {/* Header with Location and Search - Hidden in fullscreen mode */}
+        {!isMapFullscreen && (
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-5 h-5 text-primary" />
+              <div>
+                <h2 className="text-2xl font-bold">{locationName || "Loading location..."}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {location.lat.toFixed(4)}°, {location.lon.toFixed(4)}°
+                </p>
+              </div>
+            </div>
+            <div className="max-w-md w-full md:w-auto">
+              <SearchBox onSearch={handleSearch} />
             </div>
           </div>
-          <div className="max-w-md w-full md:w-auto">
-            <SearchBox onSearch={handleSearch} />
-          </div>
-        </div>
+        )}
 
         {/* Forecast View */}
         {activeView === "forecast" && (
@@ -214,10 +221,21 @@ const Index = () => {
 
         {/* Weather Map View */}
         {activeView === "map" && (
-          <Card className="h-[calc(100vh-12rem)] bg-card p-4 animate-fade-in">
+          <Card className={`${isMapFullscreen ? 'h-screen' : 'h-[calc(100vh-12rem)]'} bg-card ${isMapFullscreen ? 'p-0 rounded-none' : 'p-4'} animate-fade-in`}>
             <WeatherMapAdvanced
               center={[location.lat, location.lon]}
               onMapClick={handleMapClick}
+              weatherCondition={
+                weatherData 
+                  ? weatherData.weatherCode >= 51 && weatherData.weatherCode <= 67 
+                    ? "rain" 
+                    : weatherData.windSpeed > 20 
+                    ? "wind" 
+                    : "clear"
+                  : undefined
+              }
+              isFullscreen={isMapFullscreen}
+              onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
             />
           </Card>
         )}

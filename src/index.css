@@ -111,6 +111,51 @@ All colors MUST be HSL.
   .leaflet-control-attribution {
     @apply text-xs opacity-50;
   }
+
+  /* Rain animation */
+  @keyframes rainFall {
+    0% {
+      transform: translateY(-100vh);
+      opacity: 0.8;
+    }
+    100% {
+      transform: translateY(100vh);
+      opacity: 0;
+    }
+  }
+
+  .rain-drop {
+    position: absolute;
+    width: 2px;
+    height: 20px;
+    background: linear-gradient(to bottom, transparent, rgba(135, 206, 250, 0.6));
+    animation: rainFall 1s linear infinite;
+    pointer-events: none;
+  }
+
+  /* Wind animation */
+  @keyframes windFlow {
+    0% {
+      transform: translateX(-100vw);
+      opacity: 0;
+    }
+    50% {
+      opacity: 0.6;
+    }
+    100% {
+      transform: translateX(100vw);
+      opacity: 0;
+    }
+  }
+
+  .wind-particle {
+    position: absolute;
+    width: 40px;
+    height: 2px;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: windFlow 3s linear infinite;
+    pointer-events: none;
+  }
 }
 
 @layer base {
