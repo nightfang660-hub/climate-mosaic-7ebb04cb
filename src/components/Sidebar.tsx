@@ -1,18 +1,20 @@
-import { MapPin, Calendar, Info, TrendingUp, Split } from "lucide-react";
+import { MapPin, Calendar, Info, TrendingUp, Split, Layers, CloudRain, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
-  activeView: "forecast" | "map" | "climate" | "historical" | "comparison";
-  onViewChange: (view: "forecast" | "map" | "climate" | "historical" | "comparison") => void;
+  activeView: "forecast" | "map" | "climate" | "historical" | "comparison" | "radar" | "settings";
+  onViewChange: (view: "forecast" | "map" | "climate" | "historical" | "comparison" | "radar" | "settings") => void;
 }
 
 export const Sidebar = ({ activeView, onViewChange }: SidebarProps) => {
   const menuItems = [
     { id: "forecast" as const, label: "Forecast", icon: Calendar },
-    { id: "map" as const, label: "Map View", icon: MapPin },
-    { id: "climate" as const, label: "Climate Info", icon: Info },
+    { id: "map" as const, label: "Weather Map", icon: Layers },
+    { id: "radar" as const, label: "Radar", icon: CloudRain },
+    { id: "climate" as const, label: "Climate & AQI", icon: Info },
     { id: "historical" as const, label: "Historical Data", icon: TrendingUp },
     { id: "comparison" as const, label: "Compare Locations", icon: Split },
+    { id: "settings" as const, label: "Settings", icon: Settings },
   ];
 
   return (

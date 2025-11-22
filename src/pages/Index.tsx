@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { SearchBox } from "@/components/SearchBox";
-import { WeatherMap } from "@/components/WeatherMap";
+import { WeatherMapAdvanced } from "@/components/WeatherMapAdvanced";
+import { RadarOverlay } from "@/components/RadarOverlay";
+import { AQICard } from "@/components/AQICard";
+import { SettingsPanel } from "@/components/SettingsPanel";
 import { WeatherTable } from "@/components/WeatherTable";
 import { ForecastChart } from "@/components/ForecastChart";
 import { HourlyForecast } from "@/components/HourlyForecast";
@@ -29,7 +32,7 @@ import { Menu, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
-  const [activeView, setActiveView] = useState<"forecast" | "map" | "climate" | "historical" | "comparison">("forecast");
+  const [activeView, setActiveView] = useState<"forecast" | "map" | "climate" | "historical" | "comparison" | "radar" | "settings">("forecast");
   const [location, setLocation] = useState<{ lat: number; lon: number }>({
     lat: 17.385,
     lon: 78.4867,
@@ -209,13 +212,20 @@ const Index = () => {
           </>
         )}
 
-        {/* Map View */}
+        {/* Weather Map View */}
         {activeView === "map" && (
-          <Card className="h-[calc(100vh-12rem)] bg-card p-4">
-            <WeatherMap
+          <Card className="h-[calc(100vh-12rem)] bg-card p-4 animate-fade-in">
+            <WeatherMapAdvanced
               center={[location.lat, location.lon]}
               onMapClick={handleMapClick}
             />
+          </Card>
+        )}
+
+        {/* Radar View */}
+        {activeView === "radar" && (
+          <Card className="h-[calc(100vh-12rem)] bg-card p-4 animate-fade-in">
+            <RadarOverlay center={[location.lat, location.lon]} />
           </Card>
         )}
 
@@ -239,10 +249,17 @@ const Index = () => {
           <WeatherComparison />
         )}
 
+        {/* Settings View */}
+        {activeView === "settings" && (
+          <SettingsPanel />
+        )}
+
         {/* Climate Info */}
         {activeView === "climate" && (
-          <Card className="p-6 bg-card space-y-6">
-            <h2 className="text-2xl font-bold">Climate Information</h2>
+          <>
+            <AQICard lat={location.lat} lon={location.lon} />
+            <Card className="p-6 bg-card space-y-6 animate-fade-in">
+              <h2 className="text-2xl font-bold">Climate Information</h2>
             
             <div className="bg-muted/50 p-4 rounded-lg">
               <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
@@ -340,6 +357,7 @@ const Index = () => {
               </div>
             </div>
           </Card>
+          </>
         )}
       </main>
     </div>
