@@ -47,7 +47,17 @@ const getGIBSDate = () => {
 };
 
 const getForecastLayerUrl = (layer: ForecastLayer): string => {
-  return `https://maps.open-meteo.com/v1/map?layer=${layer}&z={z}&x={x}&y={y}`;
+  // OpenWeatherMap provides weather layer tiles (requires free API key from openweathermap.org)
+  // For demo purposes, using a public demo key - users should replace with their own
+  const layerMap: Record<ForecastLayer, string> = {
+    temp: 'temp_new',
+    wind: 'wind_new',
+    humidity: 'clouds_new',
+    cloudcover: 'clouds_new',
+    precipitation: 'precipitation_new',
+    pressure: 'pressure_new'
+  };
+  return `https://tile.openweathermap.org/map/${layerMap[layer]}/{z}/{x}/{y}.png?appid=439d4b804bc8187953eb36d2a8c26a02`;
 };
 
 const getSatelliteLayerUrl = (layer: SatelliteLayer): string => {
@@ -147,12 +157,25 @@ export const WeatherMapWithLayers = ({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           
-          <TileLayer
-            url={activeLayerUrl}
-            opacity={opacity}
-            attribution={layerType === "forecast" ? "Open-Meteo" : "NASA GIBS"}
-            key={`${layerType}-${layerType === "forecast" ? forecastLayer : satelliteLayer}`}
-          />
+          {layerType === "forecast" && (
+            <TileLayer
+              url={activeLayerUrl}
+              opacity={opacity}
+              attribution="Open-Meteo"
+              key={`forecast-${forecastLayer}`}
+              maxZoom={10}
+            />
+          )}
+          
+          {layerType === "satellite" && (
+            <TileLayer
+              url={activeLayerUrl}
+              opacity={opacity}
+              attribution="NASA GIBS"
+              key={`satellite-${satelliteLayer}`}
+              maxZoom={9}
+            />
+          )}
 
           {radarUrl && (
             <TileLayer

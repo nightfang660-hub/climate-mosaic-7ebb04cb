@@ -50,8 +50,11 @@ export const LayerControl = ({
   onOpacityChange,
 }: LayerControlProps) => {
   return (
-    <Card className="absolute top-4 left-4 z-[1000] bg-card/95 backdrop-blur-sm border-border shadow-lg p-4 w-80 animate-fade-in">
-      <Label className="text-sm font-semibold mb-3 block">Weather Layers</Label>
+    <Card className="absolute top-4 left-4 z-[1000] bg-card/95 backdrop-blur-sm border-border shadow-xl p-4 w-80 animate-fade-in">
+      <Label className="text-base font-bold mb-4 block flex items-center gap-2">
+        <Cloud className="w-5 h-5 text-primary" />
+        Weather Layers
+      </Label>
       
       {/* Layer Type Selector */}
       <div className="flex gap-2 mb-4">
@@ -59,7 +62,7 @@ export const LayerControl = ({
           variant={activeLayerType === "forecast" ? "default" : "outline"}
           size="sm"
           onClick={() => onLayerTypeChange("forecast")}
-          className="flex-1"
+          className="flex-1 transition-all"
         >
           <CloudRain className="w-4 h-4 mr-1" />
           Forecast
@@ -68,7 +71,7 @@ export const LayerControl = ({
           variant={activeLayerType === "satellite" ? "default" : "outline"}
           size="sm"
           onClick={() => onLayerTypeChange("satellite")}
-          className="flex-1"
+          className="flex-1 transition-all"
         >
           <Satellite className="w-4 h-4 mr-1" />
           Satellite
@@ -77,7 +80,8 @@ export const LayerControl = ({
 
       {/* Forecast Layers */}
       {activeLayerType === "forecast" && (
-        <div className="space-y-2 mb-4">
+        <div className="space-y-1.5 mb-4">
+          <Label className="text-xs text-muted-foreground uppercase tracking-wide mb-2 block">Select Layer</Label>
           {forecastLayers.map((layer) => {
             const Icon = layer.icon;
             return (
@@ -87,11 +91,11 @@ export const LayerControl = ({
                 size="sm"
                 onClick={() => onForecastLayerChange(layer.id)}
                 className={cn(
-                  "w-full justify-start",
-                  activeForecastLayer === layer.id && "bg-primary/20 border-primary/50"
+                  "w-full justify-start transition-all hover:scale-[1.02]",
+                  activeForecastLayer === layer.id && "bg-primary/20 border border-primary/50 shadow-sm"
                 )}
               >
-                <Icon className="w-4 h-4 mr-2" />
+                <Icon className="w-4 h-4 mr-2 text-primary" />
                 {layer.label}
               </Button>
             );
@@ -101,7 +105,8 @@ export const LayerControl = ({
 
       {/* Satellite Layers */}
       {activeLayerType === "satellite" && (
-        <div className="space-y-2 mb-4">
+        <div className="space-y-1.5 mb-4">
+          <Label className="text-xs text-muted-foreground uppercase tracking-wide mb-2 block">Select View</Label>
           {satelliteLayers.map((layer) => (
             <Button
               key={layer.id}
@@ -109,10 +114,11 @@ export const LayerControl = ({
               size="sm"
               onClick={() => onSatelliteLayerChange(layer.id)}
               className={cn(
-                "w-full justify-start",
-                activeSatelliteLayer === layer.id && "bg-primary/20 border-primary/50"
+                "w-full justify-start transition-all hover:scale-[1.02]",
+                activeSatelliteLayer === layer.id && "bg-primary/20 border border-primary/50 shadow-sm"
               )}
             >
+              <Satellite className="w-4 h-4 mr-2 text-primary" />
               {layer.label}
             </Button>
           ))}
@@ -121,29 +127,34 @@ export const LayerControl = ({
 
       {/* Radar Overlay Toggle */}
       <div className="mb-4 pt-3 border-t border-border">
+        <Label className="text-xs text-muted-foreground uppercase tracking-wide mb-2 block">Additional Overlays</Label>
         <Button
           variant={showRadar ? "secondary" : "outline"}
           size="sm"
           onClick={() => onRadarToggle(!showRadar)}
-          className="w-full"
+          className={cn(
+            "w-full transition-all",
+            showRadar && "bg-primary/20 border-primary/50"
+          )}
         >
           <CloudRainWind className="w-4 h-4 mr-2" />
-          {showRadar ? "Hide" : "Show"} Radar Overlay
+          {showRadar ? "Hide" : "Show"} Rain Radar
         </Button>
       </div>
 
       {/* Opacity Slider */}
-      <div>
-        <Label className="text-xs text-muted-foreground mb-2 block">Layer Opacity</Label>
+      <div className="pt-3 border-t border-border">
+        <Label className="text-xs text-muted-foreground mb-2 block flex items-center justify-between">
+          <span className="uppercase tracking-wide">Layer Opacity</span>
+          <span className="text-primary font-mono">{Math.round(opacity * 100)}%</span>
+        </Label>
         <Slider
           value={[opacity * 100]}
           onValueChange={(value) => onOpacityChange(value[0] / 100)}
           max={100}
           step={5}
+          className="cursor-pointer"
         />
-        <div className="text-xs text-muted-foreground mt-1 text-center">
-          {Math.round(opacity * 100)}%
-        </div>
       </div>
     </Card>
   );
