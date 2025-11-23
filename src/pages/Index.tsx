@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { SearchBox } from "@/components/SearchBox";
-import { WeatherMapAdvanced } from "@/components/WeatherMapAdvanced";
+import { WeatherMapWithLayers } from "@/components/WeatherMapWithLayers";
 import { RadarOverlay } from "@/components/RadarOverlay";
 import { AQICard } from "@/components/AQICard";
 import { SettingsPanel } from "@/components/SettingsPanel";
@@ -222,18 +222,9 @@ const Index = () => {
         {/* Weather Map View */}
         {activeView === "map" && (
           <Card className={`${isMapFullscreen ? 'h-screen' : 'h-[calc(100vh-12rem)]'} bg-card ${isMapFullscreen ? 'p-0 rounded-none' : 'p-4'} animate-fade-in`}>
-            <WeatherMapAdvanced
+            <WeatherMapWithLayers
               center={[location.lat, location.lon]}
               onMapClick={handleMapClick}
-              weatherCondition={
-                weatherData 
-                  ? weatherData.weatherCode >= 51 && weatherData.weatherCode <= 67 
-                    ? "rain" 
-                    : weatherData.windSpeed > 20 
-                    ? "wind" 
-                    : "clear"
-                  : undefined
-              }
               isFullscreen={isMapFullscreen}
               onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
             />

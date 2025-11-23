@@ -1,12 +1,8 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
-import { Play, Pause, CloudRain, Loader2 } from "lucide-react";
-import { MapContainer, TileLayer, useMap } from "react-leaflet";
+import { MapContainer, TileLayer } from "react-leaflet";
 import { LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { RadarControls } from "./RadarControls";
 
 interface RadarFrame {
   time: number;
@@ -88,85 +84,18 @@ export const RadarOverlay = ({ center }: RadarOverlayProps) => {
 
   return (
     <div className="relative h-full w-full">
-      {/* Radar Controls */}
-      <Card className="absolute top-4 left-4 z-[1000] p-4 bg-card/95 backdrop-blur-sm border-border shadow-lg w-80 animate-fade-in">
-        <div className="flex items-center gap-2 mb-4">
-          <CloudRain className="w-5 h-5 text-primary" />
-          <Label className="text-sm font-semibold">Precipitation Radar</Label>
-        </div>
+      <RadarControls
+        frames={frames}
+        currentFrameIndex={currentFrameIndex}
+        isPlaying={isPlaying}
+        loading={loading}
+        onFrameChange={(index) => {
+          setCurrentFrameIndex(index);
+          setIsPlaying(false);
+        }}
+        onPlayPause={() => setIsPlaying(!isPlaying)}
+      />
 
-        {loading ? (
-          <div className="flex items-center justify-center py-4">
-            <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* Time Display */}
-            {frameTime && (
-              <div className="text-sm text-center p-2 bg-muted/50 rounded">
-                <div className="text-muted-foreground">Time</div>
-                <div className="font-medium">{frameTime.toLocaleTimeString()}</div>
-              </div>
-            )}
-
-            {/* Play/Pause */}
-            <div className="flex items-center justify-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsPlaying(!isPlaying)}
-                disabled={frames.length === 0}
-              >
-                {isPlaying ? (
-                  <>
-                    <Pause className="w-4 h-4 mr-2" />
-                    Pause
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 mr-2" />
-                    Play
-                  </>
-                )}
-              </Button>
-            </div>
-
-            {/* Frame Slider */}
-            <div>
-              <Label className="text-xs text-muted-foreground mb-2 block">Frame Position</Label>
-              <Slider
-                value={[currentFrameIndex]}
-                onValueChange={(value) => {
-                  setCurrentFrameIndex(value[0]);
-                  setIsPlaying(false);
-                }}
-                max={Math.max(0, frames.length - 1)}
-                step={1}
-                disabled={frames.length === 0}
-              />
-              <div className="text-xs text-muted-foreground mt-1 text-center">
-                {currentFrameIndex + 1} / {frames.length}
-              </div>
-            </div>
-
-            {/* Opacity Slider */}
-            <div>
-              <Label className="text-xs text-muted-foreground mb-2 block">Opacity</Label>
-              <Slider
-                value={[opacity * 100]}
-                onValueChange={(value) => setOpacity(value[0] / 100)}
-                max={100}
-                step={1}
-              />
-              <div className="text-xs text-muted-foreground mt-1 text-center">
-                {Math.round(opacity * 100)}%
-              </div>
-            </div>
-          </div>
-        )}
-      </Card>
-
-      {/* Map */}
       <div className="h-full w-full rounded-lg overflow-hidden">
         <MapContainer 
           center={center} 
