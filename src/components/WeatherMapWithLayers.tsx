@@ -47,17 +47,16 @@ const getGIBSDate = () => {
 };
 
 const getForecastLayerUrl = (layer: ForecastLayer): string => {
-  // OpenWeatherMap provides weather layer tiles (requires free API key from openweathermap.org)
-  // For demo purposes, using a public demo key - users should replace with their own
+  // Open-Meteo weather map tiles (completely free, no API key required)
   const layerMap: Record<ForecastLayer, string> = {
-    temp: 'temp_new',
-    wind: 'wind_new',
-    humidity: 'clouds_new',
-    cloudcover: 'clouds_new',
-    precipitation: 'precipitation_new',
-    pressure: 'pressure_new'
+    temp: 'temp',
+    wind: 'wind',
+    humidity: 'humidity',
+    cloudcover: 'cloudcover',
+    precipitation: 'precipitation',
+    pressure: 'pressure'
   };
-  return `https://tile.openweathermap.org/map/${layerMap[layer]}/{z}/{x}/{y}.png?appid=439d4b804bc8187953eb36d2a8c26a02`;
+  return `https://maps.open-meteo.com/v1/map?layer=${layerMap[layer]}&z={z}&x={x}&y={y}`;
 };
 
 const getSatelliteLayerUrl = (layer: SatelliteLayer): string => {
@@ -68,9 +67,9 @@ const getSatelliteLayerUrl = (layer: SatelliteLayer): string => {
     case "truecolor":
       return `${baseUrl}/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/${date}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`;
     case "infrared":
-      return `${baseUrl}/GOES-East_ABI_Band13_Clean_Infrared/default/${date}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`;
+      return `${baseUrl}/GOES-East_ABI_Band13_Clean_Infrared/default/${date}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`;
     case "watervapor":
-      return `${baseUrl}/GOES-East_ABI_Band08_Night_Microphysics/default/${date}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`;
+      return `${baseUrl}/GOES-East_ABI_Band09_Clean_Longwave_Window/default/${date}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png`;
   }
 };
 
@@ -161,9 +160,10 @@ export const WeatherMapWithLayers = ({
             <TileLayer
               url={activeLayerUrl}
               opacity={opacity}
-              attribution="Open-Meteo"
+              attribution='&copy; <a href="https://open-meteo.com/">Open-Meteo</a>'
               key={`forecast-${forecastLayer}`}
               maxZoom={10}
+              tileSize={256}
             />
           )}
           
@@ -171,9 +171,10 @@ export const WeatherMapWithLayers = ({
             <TileLayer
               url={activeLayerUrl}
               opacity={opacity}
-              attribution="NASA GIBS"
+              attribution='&copy; <a href="https://earthdata.nasa.gov/">NASA GIBS</a>'
               key={`satellite-${satelliteLayer}`}
-              maxZoom={9}
+              maxZoom={satelliteLayer === "truecolor" ? 9 : 6}
+              tileSize={256}
             />
           )}
 

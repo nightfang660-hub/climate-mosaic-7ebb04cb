@@ -39,9 +39,9 @@ export const AQICard = ({ lat, lon }: AQICardProps) => {
         setLoading(true);
         setError(false);
         
-        // OpenAQ API - get nearest station
+        // OpenAQ v3 API - get nearest station (v2 is deprecated)
         const response = await fetch(
-          `https://api.openaq.org/v2/latest?coordinates=${lat},${lon}&radius=100000&limit=1&order_by=distance`
+          `https://api.openaq.org/v3/latest?coordinates=${lat},${lon}&radius=50000&limit=1`
         );
         
         if (!response.ok) throw new Error('Failed to fetch AQI data');
@@ -50,28 +50,32 @@ export const AQICard = ({ lat, lon }: AQICardProps) => {
         
         if (data.results && data.results.length > 0) {
           const result = data.results[0];
-          const measurements = result.measurements;
+          const parameters = result.parameters;
           
-          // Calculate simple AQI from PM2.5 (simplified calculation)
-          const pm25Measurement = measurements.find((m: any) => m.parameter === 'pm25');
-          const pm10Measurement = measurements.find((m: any) => m.parameter === 'pm10');
-          const coMeasurement = measurements.find((m: any) => m.parameter === 'co');
-          const no2Measurement = measurements.find((m: any) => m.parameter === 'no2');
-          const o3Measurement = measurements.find((m: any) => m.parameter === 'o3');
+          // Extract parameter values from v3 API structure
+          const getParam = (param: string) => {
+            const found = parameters?.find((p: any) => p.parameter === param);
+            return found?.lastValue || 0;
+          };
           
-          const pm25 = pm25Measurement?.value || 0;
+          const pm25 = getParam('pm25');
+          const pm10 = getParam('pm10');
+          const co = getParam('co');
+          const no2 = getParam('no2');
+          const o3 = getParam('o3');
+          
           // Simplified AQI calculation based on PM2.5
           const aqi = Math.round(pm25 * 4); // Rough approximation
           
           setAqiData({
             aqi,
             pm25,
-            pm10: pm10Measurement?.value || 0,
-            co: coMeasurement?.value || 0,
-            no2: no2Measurement?.value || 0,
-            o3: o3Measurement?.value || 0,
-            city: result.city,
-            country: result.country,
+            pm10,
+            co,
+            no2,
+            o3,
+            city: result.city || result.location || 'Unknown',
+            country: result.country || 'Unknown',
           });
         } else {
           setError(true);
