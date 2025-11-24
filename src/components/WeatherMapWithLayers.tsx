@@ -56,7 +56,7 @@ const getForecastLayerUrl = (layer: ForecastLayer): string => {
     precipitation: 'precipitation',
     pressure: 'pressure'
   };
-  return `https://maps.open-meteo.com/v1/map?layer=${layerMap[layer]}&z={z}&x={x}&y={y}`;
+  return `https://maps.open-meteo.com/v1/map?layer=${layerMap[layer]}&time=now&z={z}&x={x}&y={y}`;
 };
 
 const getSatelliteLayerUrl = (layer: SatelliteLayer): string => {

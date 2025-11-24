@@ -19,8 +19,11 @@ export const SearchBox = ({ onSearch }: SearchBoxProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="relative">
+      <label htmlFor="city-search" className="sr-only">Search for a city</label>
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
       <Input
+        id="city-search"
+        name="city"
         type="text"
         placeholder="Search city..."
         value={query}
