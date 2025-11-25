@@ -144,11 +144,12 @@ export const LayerControl = ({
 
       {/* Opacity Slider */}
       <div className="pt-3 border-t border-border">
-        <Label className="text-xs text-muted-foreground mb-2 block flex items-center justify-between">
+        <Label htmlFor="layer-opacity-slider" className="text-xs text-muted-foreground mb-2 block flex items-center justify-between">
           <span className="uppercase tracking-wide">Layer Opacity</span>
           <span className="text-primary font-mono">{Math.round(opacity * 100)}%</span>
         </Label>
         <Slider
+          id="layer-opacity-slider"
           value={[opacity * 100]}
           onValueChange={(value) => onOpacityChange(value[0] / 100)}
           max={100}
