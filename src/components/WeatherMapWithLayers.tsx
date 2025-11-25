@@ -4,8 +4,10 @@ import { LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Button } from "@/components/ui/button";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2, Locate } from "lucide-react";
 import { LayerControl, LayerType, ForecastLayer, SatelliteLayer } from "./LayerControl";
+
+const OPENWEATHER_API_KEY = "2647b2146eb6884d1a64a8041ea0da01";
 
 // Fix for default marker icon
 import icon from "leaflet/dist/images/marker-icon.png";
@@ -47,16 +49,16 @@ const getGIBSDate = () => {
 };
 
 const getForecastLayerUrl = (layer: ForecastLayer): string => {
-  // Open-Meteo weather map tiles (completely free, no API key required)
+  // OpenWeatherMap tile layers with API key
   const layerMap: Record<ForecastLayer, string> = {
-    temp: 'temp',
-    wind: 'wind',
+    temp: 'temp_new',
+    wind: 'wind_new',
     humidity: 'humidity',
-    cloudcover: 'cloudcover',
-    precipitation: 'precipitation',
-    pressure: 'pressure'
+    cloudcover: 'clouds_new',
+    precipitation: 'precipitation_new',
+    pressure: 'pressure_new'
   };
-  return `https://maps.open-meteo.com/v1/map?layer=${layerMap[layer]}&time=now&z={z}&x={x}&y={y}`;
+  return `https://tile.openweathermap.org/map/${layerMap[layer]}/{z}/{x}/{y}.png?appid=${OPENWEATHER_API_KEY}`;
 };
 
 const getSatelliteLayerUrl = (layer: SatelliteLayer): string => {
@@ -83,9 +85,34 @@ export const WeatherMapWithLayers = ({
   const [forecastLayer, setForecastLayer] = useState<ForecastLayer>("temp");
   const [satelliteLayer, setSatelliteLayer] = useState<SatelliteLayer>("truecolor");
   const [showRadar, setShowRadar] = useState(false);
-  const [opacity, setOpacity] = useState(0.7);
+  const [opacity, setOpacity] = useState(0.65);
   const [radarFrames, setRadarFrames] = useState<any[]>([]);
   const [currentRadarFrame, setCurrentRadarFrame] = useState(0);
+  const [mapCenter, setMapCenter] = useState<LatLngExpression>(center);
+  const [userLocation, setUserLocation] = useState<LatLngExpression | null>(null);
+
+  // Get user's geolocation on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userPos: LatLngExpression = [position.coords.latitude, position.coords.longitude];
+          setUserLocation(userPos);
+          setMapCenter(userPos);
+        },
+        () => {
+          // Default to India if permission denied
+          const indiaCenter: LatLngExpression = [20.5937, 78.9629];
+          setMapCenter(indiaCenter);
+        }
+      );
+    }
+  }, []);
+
+  // Update map center when center prop changes
+  useEffect(() => {
+    setMapCenter(center);
+  }, [center]);
 
   // Fetch radar frames
   useEffect(() => {
@@ -108,6 +135,34 @@ export const WeatherMapWithLayers = ({
     return () => clearInterval(interval);
   }, [showRadar]);
 
+  const handleLocateMe = () => {
+    if (userLocation) {
+      setMapCenter(userLocation);
+      onMapClick(userLocation[0], userLocation[1]);
+    }
+  };
+
+  const getLayerLabel = () => {
+    if (layerType === "forecast") {
+      const labels: Record<ForecastLayer, string> = {
+        temp: "Temperature",
+        wind: "Wind Speed",
+        humidity: "Humidity",
+        cloudcover: "Cloud Cover",
+        precipitation: "Precipitation",
+        pressure: "Pressure"
+      };
+      return labels[forecastLayer];
+    } else {
+      const labels: Record<SatelliteLayer, string> = {
+        truecolor: "True Color",
+        infrared: "Infrared",
+        watervapor: "Water Vapor"
+      };
+      return labels[satelliteLayer];
+    }
+  };
+
   const activeLayerUrl = layerType === "forecast" 
     ? getForecastLayerUrl(forecastLayer)
     : getSatelliteLayerUrl(satelliteLayer);
@@ -118,16 +173,37 @@ export const WeatherMapWithLayers = ({
 
   return (
     <div className="relative h-full w-full">
-      {onToggleFullscreen && (
-        <Button
-          variant="secondary"
-          size="icon"
-          className="absolute top-4 right-4 z-[1000] bg-card/95 backdrop-blur-sm border-border shadow-lg hover:bg-card"
-          onClick={onToggleFullscreen}
-        >
-          {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
-        </Button>
-      )}
+      {/* Control Buttons */}
+      <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+        {onToggleFullscreen && (
+          <Button
+            variant="secondary"
+            size="icon"
+            className="bg-card/95 backdrop-blur-sm border-border shadow-lg hover:bg-card"
+            onClick={onToggleFullscreen}
+          >
+            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+          </Button>
+        )}
+        {userLocation && (
+          <Button
+            variant="secondary"
+            size="icon"
+            className="bg-card/95 backdrop-blur-sm border-border shadow-lg hover:bg-card"
+            onClick={handleLocateMe}
+            title="Center on my location"
+          >
+            <Locate className="w-5 h-5" />
+          </Button>
+        )}
+      </div>
+
+      {/* Layer Badge */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2 bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-lg">
+        <p className="text-sm font-medium text-foreground">
+          Layer: {getLayerLabel()}
+        </p>
+      </div>
 
       <LayerControl
         activeLayerType={layerType}
@@ -142,14 +218,14 @@ export const WeatherMapWithLayers = ({
         onOpacityChange={setOpacity}
       />
 
-      <div className="h-full w-full rounded-lg overflow-hidden">
+      <div className="h-full w-full rounded-lg overflow-hidden shadow-2xl">
         <MapContainer 
-          center={center} 
+          center={mapCenter} 
           zoom={isFullscreen ? 7 : 10} 
           scrollWheelZoom={true} 
           className="h-full w-full"
-          key={`${center[0]}-${center[1]}-${isFullscreen}`}
-          maxZoom={layerType === "forecast" ? 10 : 9}
+          key={`${mapCenter[0]}-${mapCenter[1]}-${isFullscreen}`}
+          zoomControl={false}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -160,10 +236,9 @@ export const WeatherMapWithLayers = ({
             <TileLayer
               url={activeLayerUrl}
               opacity={opacity}
-              attribution='&copy; <a href="https://open-meteo.com/">Open-Meteo</a>'
+              attribution='&copy; <a href="https://openweathermap.org/">OpenWeatherMap</a>'
               key={`forecast-${forecastLayer}`}
-              maxZoom={10}
-              tileSize={256}
+              className="animate-fade-in"
             />
           )}
           
@@ -174,7 +249,7 @@ export const WeatherMapWithLayers = ({
               attribution='&copy; <a href="https://earthdata.nasa.gov/">NASA GIBS</a>'
               key={`satellite-${satelliteLayer}`}
               maxZoom={satelliteLayer === "truecolor" ? 9 : 6}
-              tileSize={256}
+              className="animate-fade-in"
             />
           )}
 
@@ -187,11 +262,11 @@ export const WeatherMapWithLayers = ({
             />
           )}
 
-          <Marker position={center}>
+          <Marker position={mapCenter}>
             <Popup>
               Selected Location
               <br />
-              {center[0].toFixed(4)}°, {center[1].toFixed(4)}°
+              {mapCenter[0].toFixed(4)}°, {mapCenter[1].toFixed(4)}°
             </Popup>
           </Marker>
           <MapClickHandler onMapClick={onMapClick} />
