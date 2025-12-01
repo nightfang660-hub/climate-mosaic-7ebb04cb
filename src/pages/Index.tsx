@@ -45,6 +45,7 @@ const Index = () => {
   const [locationName, setLocationName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const { toast } = useToast();
 
@@ -177,10 +178,15 @@ const Index = () => {
       {/* Sidebar - Hidden in fullscreen mode */}
       {!isMapFullscreen && (
         <div className={`${sidebarOpen ? "block" : "hidden"} md:block fixed md:relative inset-0 z-40 md:z-0`}>
-          <Sidebar activeView={activeView} onViewChange={(view) => {
-            setActiveView(view);
-            setSidebarOpen(false);
-          }} />
+          <Sidebar 
+            activeView={activeView} 
+            onViewChange={(view) => {
+              setActiveView(view);
+              setSidebarOpen(false);
+            }}
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
         </div>
       )}
 
@@ -227,6 +233,7 @@ const Index = () => {
               onMapClick={handleMapClick}
               isFullscreen={isMapFullscreen}
               onToggleFullscreen={() => setIsMapFullscreen(!isMapFullscreen)}
+              showMiniMap={false}
             />
           </Card>
         )}

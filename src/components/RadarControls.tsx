@@ -33,7 +33,7 @@ export const RadarControls = ({
   };
 
   return (
-    <Card className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[1000] bg-card/95 backdrop-blur-sm border-border shadow-2xl p-4 w-[600px] animate-fade-in">
+    <Card className="absolute bottom-4 right-4 z-[1000] bg-card/95 backdrop-blur-sm border-border shadow-2xl p-4 w-96 animate-fade-in">
       {loading ? (
         <div className="flex items-center justify-center py-4">
           <Loader2 className="w-6 h-6 animate-spin text-primary" />

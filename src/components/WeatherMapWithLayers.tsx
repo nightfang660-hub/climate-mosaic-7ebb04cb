@@ -29,6 +29,7 @@ interface WeatherMapWithLayersProps {
   onMapClick: (lat: number, lon: number) => void;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
+  showMiniMap?: boolean;
 }
 
 const MapClickHandler = ({ onMapClick }: { onMapClick: (lat: number, lon: number) => void }) => {
@@ -81,7 +82,8 @@ export const WeatherMapWithLayers = ({
   center, 
   onMapClick,
   isFullscreen = false,
-  onToggleFullscreen 
+  onToggleFullscreen,
+  showMiniMap = true
 }: WeatherMapWithLayersProps) => {
   const [layerType, setLayerType] = useState<LayerType>("forecast");
   const [forecastLayer, setForecastLayer] = useState<ForecastLayer>("temp");
@@ -236,11 +238,13 @@ export const WeatherMapWithLayers = ({
         onOpacityChange={setOpacity}
       />
 
-      <MiniMapNavigator
-        mainMapCenter={mapCenter}
-        mainMapZoom={mapZoom}
-        onNavigate={handleMiniMapNavigate}
-      />
+      {showMiniMap && (
+        <MiniMapNavigator
+          mainMapCenter={mapCenter}
+          mainMapZoom={mapZoom}
+          onNavigate={handleMiniMapNavigate}
+        />
+      )}
 
       <MapAnnotations
         annotations={annotations}
