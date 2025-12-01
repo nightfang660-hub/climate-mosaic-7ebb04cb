@@ -10,8 +10,7 @@ interface AQIData {
   co: number;
   no2: number;
   o3: number;
-  city: string;
-  country: string;
+  so2: number;
 }
 
 interface AQICardProps {
@@ -20,12 +19,11 @@ interface AQICardProps {
 }
 
 const getAQILevel = (aqi: number) => {
-  if (aqi <= 50) return { label: "Good", color: "bg-emerald-500", textColor: "text-emerald-500", advice: "Air quality is satisfactory, enjoy outdoor activities" };
-  if (aqi <= 100) return { label: "Moderate", color: "bg-amber-500", textColor: "text-amber-500", advice: "Air quality is acceptable for most people" };
-  if (aqi <= 150) return { label: "Unhealthy for Sensitive", color: "bg-orange-500", textColor: "text-orange-500", advice: "Sensitive groups should limit prolonged outdoor activities" };
-  if (aqi <= 200) return { label: "Unhealthy", color: "bg-rose-500", textColor: "text-rose-500", advice: "Everyone may experience health effects, limit outdoor exertion" };
-  if (aqi <= 300) return { label: "Very Unhealthy", color: "bg-purple-500", textColor: "text-purple-500", advice: "Health alert: everyone may experience serious effects, avoid outdoor activities" };
-  return { label: "Hazardous", color: "bg-red-900", textColor: "text-red-900", advice: "Health warning: emergency conditions, remain indoors" };
+  if (aqi === 1) return { label: "Good", color: "bg-emerald-500", textColor: "text-emerald-500", advice: "Safe outdoor conditions" };
+  if (aqi === 2) return { label: "Fair", color: "bg-lime-500", textColor: "text-lime-500", advice: "Sensitive groups caution" };
+  if (aqi === 3) return { label: "Moderate", color: "bg-amber-500", textColor: "text-amber-500", advice: "Limit prolonged exposure" };
+  if (aqi === 4) return { label: "Poor", color: "bg-orange-600", textColor: "text-orange-600", advice: "Reduce outdoor activity" };
+  return { label: "Very Poor", color: "bg-red-600", textColor: "text-red-600", advice: "Avoid going outside" };
 };
 
 export const AQICard = ({ lat, lon }: AQICardProps) => {
@@ -39,43 +37,29 @@ export const AQICard = ({ lat, lon }: AQICardProps) => {
         setLoading(true);
         setError(false);
         
-        // OpenAQ v3 API - get nearest station (v2 is deprecated)
+        const API_KEY = "2647b2146eb6884d1a64a8041ea0da01";
+        
+        // OpenWeatherMap Air Pollution API
         const response = await fetch(
-          `https://api.openaq.org/v3/latest?coordinates=${lat},${lon}&radius=50000&limit=1`
+          `https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`
         );
         
         if (!response.ok) throw new Error('Failed to fetch AQI data');
         
         const data = await response.json();
         
-        if (data.results && data.results.length > 0) {
-          const result = data.results[0];
-          const parameters = result.parameters;
-          
-          // Extract parameter values from v3 API structure
-          const getParam = (param: string) => {
-            const found = parameters?.find((p: any) => p.parameter === param);
-            return found?.lastValue || 0;
-          };
-          
-          const pm25 = getParam('pm25');
-          const pm10 = getParam('pm10');
-          const co = getParam('co');
-          const no2 = getParam('no2');
-          const o3 = getParam('o3');
-          
-          // Simplified AQI calculation based on PM2.5
-          const aqi = Math.round(pm25 * 4); // Rough approximation
+        if (data.list && data.list.length > 0) {
+          const airData = data.list[0];
+          const components = airData.components;
           
           setAqiData({
-            aqi,
-            pm25,
-            pm10,
-            co,
-            no2,
-            o3,
-            city: result.city || result.location || 'Unknown',
-            country: result.country || 'Unknown',
+            aqi: airData.main.aqi,
+            pm25: components.pm2_5,
+            pm10: components.pm10,
+            co: components.co / 1000, // Convert to mg/m³
+            no2: components.no2,
+            o3: components.o3,
+            so2: components.so2,
           });
         } else {
           setError(true);
@@ -113,7 +97,7 @@ export const AQICard = ({ lat, lon }: AQICardProps) => {
         <div className="flex flex-col items-center justify-center py-12 text-muted-foreground bg-muted/30 rounded-lg">
           <AlertTriangle className="w-16 h-16 mb-3 text-amber-500" />
           <p className="text-lg font-medium">No Data Available</p>
-          <p className="text-sm mt-1">Air quality monitoring station not found within 100km radius</p>
+          <p className="text-sm mt-1">No AQI monitoring station nearby — Try another location</p>
         </div>
       </Card>
     );
@@ -173,16 +157,21 @@ export const AQICard = ({ lat, lon }: AQICardProps) => {
           <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-lg border border-border/30 hover:border-border/60 transition-colors">
             <div className="text-xs text-muted-foreground mb-1 font-medium">O₃</div>
             <div className="text-2xl font-bold">{aqiData.o3.toFixed(1)}</div>
-            <div className="text-xs text-muted-foreground">ppb</div>
+            <div className="text-xs text-muted-foreground">µg/m³</div>
+          </div>
+          <div className="bg-gradient-to-br from-muted/50 to-muted/30 p-4 rounded-lg border border-border/30 hover:border-border/60 transition-colors">
+            <div className="text-xs text-muted-foreground mb-1 font-medium">SO₂</div>
+            <div className="text-2xl font-bold">{aqiData.so2.toFixed(1)}</div>
+            <div className="text-xs text-muted-foreground">µg/m³</div>
           </div>
         </div>
       </div>
 
-      {/* Station Info */}
+      {/* Data Source Info */}
       <div className="mt-6 pt-4 border-t border-border flex items-center justify-center gap-2">
         <MapPin className="w-4 h-4 text-muted-foreground" />
         <span className="text-sm text-muted-foreground">
-          Monitoring station: <span className="font-medium text-foreground">{aqiData.city}, {aqiData.country}</span>
+          Data from <span className="font-medium text-foreground">OpenWeatherMap Air Pollution API</span>
         </span>
       </div>
     </Card>
