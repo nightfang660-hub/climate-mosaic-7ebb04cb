@@ -6,6 +6,8 @@ import L from "leaflet";
 import { Button } from "@/components/ui/button";
 import { Maximize2, Minimize2, Locate } from "lucide-react";
 import { LayerControl, LayerType, ForecastLayer, SatelliteLayer } from "./LayerControl";
+import { MiniMapNavigator } from "./MiniMapNavigator";
+import { MapAnnotations } from "./MapAnnotations";
 
 const OPENWEATHER_API_KEY = "2647b2146eb6884d1a64a8041ea0da01";
 
@@ -88,21 +90,24 @@ export const WeatherMapWithLayers = ({
   const [opacity, setOpacity] = useState(0.65);
   const [radarFrames, setRadarFrames] = useState<any[]>([]);
   const [currentRadarFrame, setCurrentRadarFrame] = useState(0);
-  const [mapCenter, setMapCenter] = useState<LatLngExpression>(center);
-  const [userLocation, setUserLocation] = useState<LatLngExpression | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number]>(center as [number, number]);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [mapZoom, setMapZoom] = useState(isFullscreen ? 7 : 10);
+  const [showAnnotations, setShowAnnotations] = useState(false);
+  const [annotations, setAnnotations] = useState<any[]>([]);
 
   // Get user's geolocation on mount
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const userPos: LatLngExpression = [position.coords.latitude, position.coords.longitude];
+          const userPos: [number, number] = [position.coords.latitude, position.coords.longitude];
           setUserLocation(userPos);
           setMapCenter(userPos);
         },
         () => {
           // Default to India if permission denied
-          const indiaCenter: LatLngExpression = [20.5937, 78.9629];
+          const indiaCenter: [number, number] = [20.5937, 78.9629];
           setMapCenter(indiaCenter);
         }
       );
@@ -111,7 +116,7 @@ export const WeatherMapWithLayers = ({
 
   // Update map center when center prop changes
   useEffect(() => {
-    setMapCenter(center);
+    setMapCenter(center as [number, number]);
   }, [center]);
 
   // Fetch radar frames
@@ -140,6 +145,19 @@ export const WeatherMapWithLayers = ({
       setMapCenter(userLocation);
       onMapClick(userLocation[0], userLocation[1]);
     }
+  };
+
+  const handleMiniMapNavigate = (lat: number, lon: number) => {
+    setMapCenter([lat, lon]);
+    onMapClick(lat, lon);
+  };
+
+  const handleAddAnnotation = (annotation: any) => {
+    setAnnotations(prev => [...prev, { ...annotation, id: Date.now().toString() }]);
+  };
+
+  const handleClearAnnotations = () => {
+    setAnnotations([]);
   };
 
   const getLayerLabel = () => {
@@ -218,10 +236,24 @@ export const WeatherMapWithLayers = ({
         onOpacityChange={setOpacity}
       />
 
+      <MiniMapNavigator
+        mainMapCenter={mapCenter}
+        mainMapZoom={mapZoom}
+        onNavigate={handleMiniMapNavigate}
+      />
+
+      <MapAnnotations
+        annotations={annotations}
+        onAddAnnotation={handleAddAnnotation}
+        onClearAnnotations={handleClearAnnotations}
+        isActive={showAnnotations}
+        onToggle={() => setShowAnnotations(!showAnnotations)}
+      />
+
       <div className="h-full w-full rounded-lg overflow-hidden shadow-2xl">
         <MapContainer 
           center={mapCenter} 
-          zoom={isFullscreen ? 7 : 10} 
+          zoom={mapZoom} 
           scrollWheelZoom={true} 
           className="h-full w-full"
           key={`${mapCenter[0]}-${mapCenter[1]}-${isFullscreen}`}
