@@ -163,15 +163,15 @@ export interface WeatherAlert {
 export const fetchHistoricalWeather = async (
   lat: number,
   lon: number,
-  days: number = 7
+  startDate?: Date,
+  endDate?: Date
 ): Promise<HistoricalWeatherData[]> => {
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
+  const end = endDate || new Date();
+  const start = startDate || new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
 
   const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
-  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${formatDate(startDate)}&end_date=${formatDate(endDate)}&daily=temperature_2m_mean,relative_humidity_2m_mean,precipitation_sum&timezone=auto`;
+  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${formatDate(start)}&end_date=${formatDate(end)}&daily=temperature_2m_mean,relative_humidity_2m_mean,precipitation_sum&timezone=auto`;
 
   const response = await fetch(url);
   if (!response.ok) {
