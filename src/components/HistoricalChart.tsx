@@ -1,12 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import type { HistoricalWeatherData } from "@/lib/weather-api";
+import { fetchHistoricalWeather } from "@/lib/weather-api";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { MetricSelector, AVAILABLE_METRICS } from "./MetricSelector";
+import { DateRangePicker } from "./DateRangePicker";
+import { CitySelector, type SelectedCity } from "./CitySelector";
+import { useToast } from "@/hooks/use-toast";
 
 const CHART_COLORS = [
   "hsl(var(--chart-1))",
@@ -22,17 +26,49 @@ const CHART_COLORS = [
 ];
 
 interface HistoricalChartProps {
-  data: HistoricalWeatherData[];
-  loading?: boolean;
+  initialLocation: { name: string; lat: number; lon: number };
 }
 
-export const HistoricalChart = ({ data, loading }: HistoricalChartProps) => {
+export const HistoricalChart = ({ initialLocation }: HistoricalChartProps) => {
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(["temp", "humidity", "precipitation"]);
   const [visibleMetrics, setVisibleMetrics] = useState<{ [key: string]: boolean }>({
     temp: true,
     humidity: true,
     precipitation: true,
   });
+  const [startDate, setStartDate] = useState<Date>(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+  const [endDate, setEndDate] = useState<Date>(new Date());
+  const [selectedCities, setSelectedCities] = useState<SelectedCity[]>([
+    { ...initialLocation, color: CHART_COLORS[0] }
+  ]);
+  const [cityData, setCityData] = useState<Map<string, HistoricalWeatherData[]>>(new Map());
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const newData = new Map<string, HistoricalWeatherData[]>();
+      
+      try {
+        for (const city of selectedCities) {
+          const data = await fetchHistoricalWeather(city.lat, city.lon, startDate, endDate);
+          newData.set(city.name, data);
+        }
+        setCityData(newData);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch historical weather data.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [selectedCities, startDate, endDate, toast]);
 
   const toggleMetric = (metricId: string) => {
     setVisibleMetrics(prev => ({ ...prev, [metricId]: !prev[metricId] }));
@@ -47,6 +83,35 @@ export const HistoricalChart = ({ data, loading }: HistoricalChartProps) => {
     setVisibleMetrics(newVisible);
   };
 
+  const handleDateChange = (start: Date, end: Date) => {
+    setStartDate(start);
+    setEndDate(end);
+  };
+
+  // Combine data from all cities
+  const combinedData = (() => {
+    if (cityData.size === 0) return [];
+    
+    const allDates = new Set<string>();
+    cityData.forEach(data => {
+      data.forEach(d => allDates.add(d.date));
+    });
+    
+    return Array.from(allDates).sort().map(date => {
+      const dataPoint: any = { date };
+      selectedCities.forEach(city => {
+        const cityDataPoints = cityData.get(city.name);
+        const point = cityDataPoints?.find(d => d.date === date);
+        if (point) {
+          dataPoint[`${city.name}_temperature`] = point.temperature;
+          dataPoint[`${city.name}_humidity`] = point.humidity;
+          dataPoint[`${city.name}_precipitation`] = point.precipitation;
+        }
+      });
+      return dataPoint;
+    });
+  })();
+
   if (loading) {
     return (
       <Card className="p-6 bg-card animate-fade-in">
@@ -56,34 +121,47 @@ export const HistoricalChart = ({ data, loading }: HistoricalChartProps) => {
     );
   }
 
-  const stats = data.length > 0 ? {
-    avgTemp: (data.reduce((sum, d) => sum + d.temperature, 0) / data.length).toFixed(1),
-    totalPrecip: data.reduce((sum, d) => sum + d.precipitation, 0).toFixed(1),
-    avgHumidity: (data.reduce((sum, d) => sum + d.humidity, 0) / data.length).toFixed(0),
-  } : null;
+  const stats = combinedData.length > 0 && cityData.size > 0 ? (() => {
+    const firstCityData = Array.from(cityData.values())[0];
+    return {
+      avgTemp: (firstCityData.reduce((sum, d) => sum + d.temperature, 0) / firstCityData.length).toFixed(1),
+      totalPrecip: firstCityData.reduce((sum, d) => sum + d.precipitation, 0).toFixed(1),
+      avgHumidity: (firstCityData.reduce((sum, d) => sum + d.humidity, 0) / firstCityData.length).toFixed(0),
+    };
+  })() : null;
 
   return (
-    <>
+    <div className="space-y-4">
       <MetricSelector
         selectedMetrics={selectedMetrics}
         onMetricsChange={handleMetricsChange}
       />
       
       <Card className="p-6 bg-card animate-fade-in border-2 border-border/50">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <TrendingUp className="w-6 h-6 text-primary" />
+        <div className="space-y-4 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <TrendingUp className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold">Historical Weather Trends</h3>
+                <p className="text-sm text-muted-foreground">
+                  {selectedCities.length} {selectedCities.length === 1 ? 'location' : 'locations'} • {combinedData.length} days
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-xl font-semibold">Historical Weather Trends</h3>
-              <p className="text-sm text-muted-foreground">Last {data.length} days analysis</p>
-            </div>
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onDateChange={handleDateChange}
+            />
           </div>
-          <Badge variant="outline" className="flex items-center gap-1">
-            <Calendar className="w-3 h-3" />
-            {data.length} days
-          </Badge>
+
+          <CitySelector
+            selectedCities={selectedCities}
+            onCitiesChange={setSelectedCities}
+          />
         </div>
 
         {/* Quick Stats */}
@@ -129,17 +207,17 @@ export const HistoricalChart = ({ data, loading }: HistoricalChartProps) => {
         </div>
 
         {/* Chart */}
-        <ResponsiveContainer width="100%" height={350}>
-          <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+        <ResponsiveContainer width="100%" height={400}>
+          <LineChart data={combinedData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
             <XAxis 
               dataKey="date" 
               stroke="hsl(var(--muted-foreground))"
-              style={{ fontSize: '12px' }}
+              style={{ fontSize: '11px' }}
             />
             <YAxis 
               stroke="hsl(var(--muted-foreground))"
-              style={{ fontSize: '12px' }}
+              style={{ fontSize: '11px' }}
             />
             <Tooltip
               contentStyle={{
@@ -152,31 +230,39 @@ export const HistoricalChart = ({ data, loading }: HistoricalChartProps) => {
             <Legend 
               wrapperStyle={{
                 color: "hsl(var(--foreground))",
+                fontSize: '11px',
               }}
             />
-            {selectedMetrics.map((metricId, index) => {
-              const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
-              if (!metric || !visibleMetrics[metricId]) return null;
-              
-              const color = CHART_COLORS[index % CHART_COLORS.length];
-              const dataKey = metricId === "temp" ? "temperature" : metricId === "precipitation" ? "precipitation" : "humidity";
-              
-              return (
-                <Line
-                  key={metricId}
-                  type="monotone"
-                  dataKey={dataKey}
-                  stroke={color}
-                  strokeWidth={2}
-                  name={`${metric.label} (${metric.unit})`}
-                  dot={{ fill: color }}
-                  animationDuration={800}
-                />
-              );
-            })}
+            {selectedCities.map((city) => 
+              selectedMetrics.map((metricId) => {
+                const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
+                if (!metric || !visibleMetrics[metricId]) return null;
+                
+                const dataKey = metricId === "temp" 
+                  ? `${city.name}_temperature` 
+                  : metricId === "precipitation" 
+                    ? `${city.name}_precipitation` 
+                    : `${city.name}_humidity`;
+                
+                return (
+                  <Line
+                    key={`${city.name}-${metricId}`}
+                    type="monotone"
+                    dataKey={dataKey}
+                    stroke={city.color}
+                    strokeWidth={2.5}
+                    name={`${city.name} - ${metric.label} (${metric.unit})`}
+                    dot={{ fill: city.color, r: 3 }}
+                    activeDot={{ r: 5 }}
+                    animationDuration={800}
+                    connectNulls
+                  />
+                );
+              })
+            )}
           </LineChart>
         </ResponsiveContainer>
       </Card>
-    </>
+    </div>
   );
 };

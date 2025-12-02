@@ -18,14 +18,12 @@ import {
   fetchWeatherData,
   fetchForecastData,
   fetchHourlyForecast,
-  fetchHistoricalWeather,
   analyzeWeatherAlerts,
   geocodeCity,
   getUserLocation,
   type WeatherData,
   type ForecastData,
   type HourlyForecastData,
-  type HistoricalWeatherData,
   type WeatherAlert,
 } from "@/lib/weather-api";
 import { Menu, MapPin } from "lucide-react";
@@ -40,7 +38,6 @@ const Index = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [forecastData, setForecastData] = useState<ForecastData[]>([]);
   const [hourlyData, setHourlyData] = useState<HourlyForecastData[]>([]);
-  const [historicalData, setHistoricalData] = useState<HistoricalWeatherData[]>([]);
   const [weatherAlerts, setWeatherAlerts] = useState<WeatherAlert[]>([]);
   const [locationName, setLocationName] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -54,16 +51,14 @@ const Index = () => {
     const loadWeatherData = async () => {
       setLoading(true);
       try {
-        const [weather, forecast, hourly, historical] = await Promise.all([
+        const [weather, forecast, hourly] = await Promise.all([
           fetchWeatherData(location.lat, location.lon),
           fetchForecastData(location.lat, location.lon),
           fetchHourlyForecast(location.lat, location.lon),
-          fetchHistoricalWeather(location.lat, location.lon, 7),
         ]);
         setWeatherData(weather);
         setForecastData(forecast);
         setHourlyData(hourly);
-        setHistoricalData(historical);
         
         // Analyze for weather alerts
         const alerts = analyzeWeatherAlerts(weather);
@@ -247,17 +242,13 @@ const Index = () => {
 
         {/* Historical Data View */}
         {activeView === "historical" && (
-          <>
-            <HistoricalChart data={historicalData} loading={loading} />
-            <Card className="p-6 bg-card">
-              <h3 className="text-xl font-semibold mb-4">About Historical Data</h3>
-              <p className="text-muted-foreground">
-                Historical weather data shows trends over the past 7 days, including temperature,
-                humidity, and precipitation patterns. This data can help you understand recent
-                weather patterns and trends in your selected location.
-              </p>
-            </Card>
-          </>
+          <HistoricalChart 
+            initialLocation={{ 
+              name: locationName, 
+              lat: location.lat, 
+              lon: location.lon 
+            }} 
+          />
         )}
 
         {/* Comparison View */}
