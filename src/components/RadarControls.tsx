@@ -33,36 +33,36 @@ export const RadarControls = ({
   };
 
   return (
-    <Card className="absolute bottom-4 right-4 z-[1000] bg-card/95 backdrop-blur-sm border-border shadow-2xl p-3 w-72 animate-fade-in">
+    <Card className="absolute bottom-4 right-4 z-[1000] bg-card/95 backdrop-blur-sm border-border shadow-2xl p-2 w-56 animate-fade-in">
       {loading ? (
-        <div className="flex items-center justify-center py-3">
-          <Loader2 className="w-5 h-5 animate-spin text-primary" />
+        <div className="flex items-center justify-center py-2">
+          <Loader2 className="w-4 h-4 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="space-y-2.5">
-          {/* Enhanced Time Display */}
+        <div className="space-y-2">
+          {/* Time Display */}
           {frameTime && (
-            <div className="text-center bg-gradient-to-br from-primary/10 to-primary/5 p-2 rounded-lg border border-primary/20">
-              <div className="text-[10px] text-muted-foreground mb-0.5">Radar Timestamp</div>
-              <div className="font-bold text-base text-primary">
+            <div className="text-center bg-gradient-to-br from-primary/10 to-primary/5 p-1.5 rounded-lg border border-primary/20">
+              <div className="text-[9px] text-muted-foreground">Radar Time</div>
+              <div className="font-bold text-sm text-primary">
                 {frameTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </div>
-              <div className="font-semibold text-xs text-foreground">
+              <div className="font-semibold text-[10px] text-foreground">
                 {frameTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
           )}
 
           {/* Playback Controls */}
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center gap-1.5">
             <Button
               variant="outline"
               size="icon"
               onClick={goToPrevious}
               disabled={currentFrameIndex === 0}
-              className="hover:bg-primary/10 h-8 w-8"
+              className="hover:bg-primary/10 h-7 w-7"
             >
-              <SkipBack className="w-3.5 h-3.5" />
+              <SkipBack className="w-3 h-3" />
             </Button>
             
             <Button
@@ -70,12 +70,12 @@ export const RadarControls = ({
               size="icon"
               onClick={onPlayPause}
               disabled={frames.length === 0}
-              className="w-11 h-11 shadow-lg"
+              className="w-9 h-9 shadow-lg"
             >
               {isPlaying ? (
-                <Pause className="w-5 h-5" />
+                <Pause className="w-4 h-4" />
               ) : (
-                <Play className="w-5 h-5" />
+                <Play className="w-4 h-4" />
               )}
             </Button>
 
@@ -84,16 +84,16 @@ export const RadarControls = ({
               size="icon"
               onClick={goToNext}
               disabled={currentFrameIndex === frames.length - 1}
-              className="hover:bg-primary/10 h-8 w-8"
+              className="hover:bg-primary/10 h-7 w-7"
             >
-              <SkipForward className="w-3.5 h-3.5" />
+              <SkipForward className="w-3 h-3" />
             </Button>
           </div>
 
-          {/* Enhanced Timeline Slider with Frame Preview */}
+          {/* Timeline Slider */}
           <div>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <span className="text-[10px] text-muted-foreground font-medium">Timeline:</span>
+            <div className="flex items-center gap-1 mb-1">
+              <span className="text-[9px] text-muted-foreground font-medium">Timeline:</span>
               <div className="flex-1 h-0.5 bg-muted rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-primary transition-all duration-300"
@@ -109,24 +109,24 @@ export const RadarControls = ({
               disabled={frames.length === 0}
               className="cursor-pointer"
             />
-            <div className="flex justify-between items-center mt-1.5">
-              <div className="text-[10px] text-muted-foreground">
-                Frame <span className="font-bold text-foreground">{currentFrameIndex + 1}</span> / {frames.length}
+            <div className="flex justify-between items-center mt-1">
+              <div className="text-[9px] text-muted-foreground">
+                <span className="font-bold text-foreground">{currentFrameIndex + 1}</span> / {frames.length}
               </div>
-              <div className="text-[10px] text-muted-foreground">
-                {isPlaying ? "Playing..." : "Paused"}
+              <div className="text-[9px] text-muted-foreground">
+                {isPlaying ? "Playing" : "Paused"}
               </div>
             </div>
           </div>
 
           {/* Frame Type Indicator */}
-          <div className="flex items-center justify-center gap-2">
+          <div className="flex items-center justify-center">
             {currentFrameIndex < frames.length / 2 ? (
-              <div className="text-[10px] px-2 py-0.5 bg-blue-500/20 text-blue-500 rounded-full font-medium border border-blue-500/30">
-                Past Data
+              <div className="text-[9px] px-1.5 py-0.5 bg-blue-500/20 text-blue-500 rounded-full font-medium border border-blue-500/30">
+                Past
               </div>
             ) : (
-              <div className="text-[10px] px-2 py-0.5 bg-green-500/20 text-green-500 rounded-full font-medium border border-green-500/30">
+              <div className="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-500 rounded-full font-medium border border-green-500/30">
                 Nowcast
               </div>
             )}
