@@ -164,14 +164,19 @@ export const fetchHistoricalWeather = async (
   lat: number,
   lon: number,
   startDate?: Date,
-  endDate?: Date
-): Promise<HistoricalWeatherData[]> => {
+  endDate?: Date,
+  metrics?: string[]
+): Promise<any> => {
   const end = endDate || new Date();
   const start = startDate || new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
 
   const formatDate = (date: Date) => date.toISOString().split('T')[0];
 
-  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${formatDate(start)}&end_date=${formatDate(end)}&daily=temperature_2m_mean,relative_humidity_2m_mean,precipitation_sum&timezone=auto`;
+  const hourlyParams = metrics && metrics.length > 0 
+    ? metrics.join(",")
+    : "temperature_2m,relative_humidity_2m,precipitation";
+
+  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${formatDate(start)}&end_date=${formatDate(end)}&hourly=${hourlyParams}&timezone=auto`;
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -179,14 +184,31 @@ export const fetchHistoricalWeather = async (
   }
 
   const data = await response.json();
-  const daily = data.daily;
+  return data;
+};
 
-  return daily.time.map((date: string, index: number) => ({
-    date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    temperature: daily.temperature_2m_mean[index],
-    humidity: daily.relative_humidity_2m_mean[index],
-    precipitation: daily.precipitation_sum[index],
-  }));
+/**
+ * Fetch air quality historical data from Open-Meteo API
+ */
+export const fetchAirQualityHistory = async (
+  lat: number,
+  lon: number,
+  startDate: Date,
+  endDate: Date,
+  metrics: string[]
+): Promise<any> => {
+  const formatDate = (date: Date) => date.toISOString().split('T')[0];
+  
+  const hourlyParams = metrics.join(",");
+  const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&start_date=${formatDate(startDate)}&end_date=${formatDate(endDate)}&hourly=${hourlyParams}&timezone=auto`;
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Failed to fetch air quality data");
+  }
+
+  const data = await response.json();
+  return data;
 };
 
 /**
