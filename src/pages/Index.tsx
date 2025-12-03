@@ -102,7 +102,8 @@ const Index = () => {
     };
 
     loadWeatherData();
-  }, [location, toast]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location]);
 
   // Try to get user's location on mount
   useEffect(() => {
@@ -120,7 +121,8 @@ const Index = () => {
       }
     };
     detectLocation();
-  }, [toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSearch = async (cityName: string) => {
     try {
