@@ -25,6 +25,7 @@ import {
   type ForecastData,
   type HourlyForecastData,
   type WeatherAlert,
+  type GeocodingResult,
 } from "@/lib/weather-api";
 import { Menu, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -158,6 +159,18 @@ const Index = () => {
     });
   };
 
+  const handleLocationSelect = (location: GeocodingResult) => {
+    setLocation({ lat: location.latitude, lon: location.longitude });
+    const displayName = location.admin1 
+      ? `${location.name}, ${location.admin1}, ${location.country}`
+      : `${location.name}, ${location.country}`;
+    setLocationName(displayName);
+    toast({
+      title: "Location updated",
+      description: `Showing weather for ${displayName}`,
+    });
+  };
+
   return (
     <div className="flex min-h-screen bg-background">
       {/* Mobile Menu Button */}
@@ -202,7 +215,7 @@ const Index = () => {
               </div>
             </div>
             <div className="max-w-md w-full md:w-auto">
-              <SearchBox onSearch={handleSearch} />
+              <SearchBox onSearch={handleSearch} onLocationSelect={handleLocationSelect} />
             </div>
           </div>
         )}
