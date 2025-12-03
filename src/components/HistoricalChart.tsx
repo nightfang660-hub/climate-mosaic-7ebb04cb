@@ -45,13 +45,20 @@ export const HistoricalChart = ({ initialLocation }: HistoricalChartProps) => {
   ]);
   const [rawData, setRawData] = useState<Map<string, any>>(new Map());
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchData = async () => {
-      if (selectedMetrics.length === 0) return;
+      if (selectedMetrics.length === 0) {
+        setRawData(new Map());
+        return;
+      }
       
       setLoading(true);
+      setError(null);
       const newData = new Map<string, any>();
       
       try {
@@ -71,14 +78,18 @@ export const HistoricalChart = ({ initialLocation }: HistoricalChartProps) => {
           
           // Fetch weather data
           if (weatherMetrics.length > 0) {
-            const weatherData = await fetchHistoricalWeather(
-              city.lat, 
-              city.lon, 
-              startDate, 
-              endDate,
-              weatherMetrics
-            );
-            cityDataObj.weather = weatherData;
+            try {
+              const weatherData = await fetchHistoricalWeather(
+                city.lat, 
+                city.lon, 
+                startDate, 
+                endDate,
+                weatherMetrics
+              );
+              cityDataObj.weather = weatherData;
+            } catch (err) {
+              console.warn(`Weather data error for ${city.name}:`, err);
+            }
           }
           
           // Fetch air quality data
@@ -92,27 +103,41 @@ export const HistoricalChart = ({ initialLocation }: HistoricalChartProps) => {
                 airQualityMetrics
               );
               cityDataObj.airQuality = aqData;
-            } catch (error) {
+            } catch (err) {
               console.warn(`Air quality data not available for ${city.name}`);
             }
           }
           
           newData.set(city.name, cityDataObj);
         }
-        setRawData(newData);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch historical data.",
-          variant: "destructive",
-        });
+        
+        if (isMounted) {
+          setRawData(newData);
+        }
+      } catch (err) {
+        console.error("Failed to fetch historical data:", err);
+        if (isMounted) {
+          setError("Failed to fetch historical data.");
+          toast({
+            title: "Error",
+            description: "Failed to fetch historical data.",
+            variant: "destructive",
+          });
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchData();
-  }, [selectedCities, startDate, endDate, selectedMetrics, toast]);
+    
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCities, startDate, endDate, selectedMetrics]);
 
   const toggleMetric = (metricId: string) => {
     setVisibleMetrics(prev => ({ ...prev, [metricId]: !prev[metricId] }));
@@ -252,6 +277,45 @@ export const HistoricalChart = ({ initialLocation }: HistoricalChartProps) => {
     return config;
   }, [metricsByAxis]);
 
+  // Early return for SSR safety
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  // Show empty state when no metrics selected
+  if (selectedMetrics.length === 0) {
+    return (
+      <div className="space-y-4">
+        <MetricSelector
+          selectedMetrics={selectedMetrics}
+          onMetricsChange={handleMetricsChange}
+        />
+        <Card className="p-6 bg-card animate-fade-in border-2 border-border/50">
+          <div className="h-96 flex items-center justify-center text-muted-foreground">
+            Select metrics above to display the chart
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error && !loading) {
+    return (
+      <div className="space-y-4">
+        <MetricSelector
+          selectedMetrics={selectedMetrics}
+          onMetricsChange={handleMetricsChange}
+        />
+        <Card className="p-6 bg-destructive/10 animate-fade-in border-2 border-destructive/50">
+          <div className="h-96 flex items-center justify-center text-destructive">
+            {error} - Please try again or select different metrics.
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <MetricSelector
@@ -269,7 +333,7 @@ export const HistoricalChart = ({ initialLocation }: HistoricalChartProps) => {
               <div>
                 <h3 className="text-xl font-semibold">Historical Weather Trends</h3>
                 <p className="text-sm text-muted-foreground">
-                  {selectedCities.length} {selectedCities.length === 1 ? 'location' : 'locations'} • {combinedData.length} days
+                  {selectedCities.length} {selectedCities.length === 1 ? 'location' : 'locations'} • {combinedData.length} data points
                 </p>
               </div>
             </div>
@@ -285,7 +349,6 @@ export const HistoricalChart = ({ initialLocation }: HistoricalChartProps) => {
             onCitiesChange={setSelectedCities}
           />
         </div>
-
 
         {/* Metric Toggle Buttons */}
         <div className="flex gap-2 mb-4 flex-wrap">
@@ -316,87 +379,93 @@ export const HistoricalChart = ({ initialLocation }: HistoricalChartProps) => {
 
         {/* Multi-Axis Chart */}
         <div className="bg-background/60 p-4 rounded-lg border border-border/30">
-          <ResponsiveContainer width="100%" height={500}>
-            <LineChart data={combinedData} margin={{ top: 5, right: 60, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
-              <XAxis 
-                dataKey="time" 
-                stroke="hsl(var(--muted-foreground))"
-                style={{ fontSize: '10px' }}
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
-              />
-              
-              {/* Multiple Y-Axes based on metric units */}
-              {axisConfig.map((axis, idx) => (
-                <YAxis
-                  key={axis.id}
-                  yAxisId={axis.id}
-                  orientation={axis.orientation}
+          {combinedData.length === 0 || axisConfig.length === 0 ? (
+            <div className="h-[500px] flex items-center justify-center text-muted-foreground">
+              {loading ? "Loading chart data..." : "No data available for the selected metrics and date range"}
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={500}>
+              <LineChart data={combinedData} margin={{ top: 5, right: 60, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.2} />
+                <XAxis 
+                  dataKey="time" 
                   stroke="hsl(var(--muted-foreground))"
                   style={{ fontSize: '10px' }}
                   tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  label={{ 
-                    value: axis.unit, 
-                    angle: -90, 
-                    position: axis.orientation === 'left' ? 'insideLeft' : 'insideRight',
-                    style: { fontSize: '11px', fill: 'hsl(var(--muted-foreground))' }
-                  }}
-                  domain={['auto', 'auto']}
                 />
-              ))}
-              
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "8px",
-                  padding: "8px 12px",
-                  fontSize: "11px"
-                }}
-                labelStyle={{ color: "hsl(var(--muted-foreground))", marginBottom: "4px" }}
-              />
-              
-              <Legend 
-                wrapperStyle={{
-                  fontSize: '10px',
-                  paddingTop: '10px'
-                }}
-                iconType="line"
-              />
-              
-              {/* Render lines for each city and metric combination */}
-              {selectedCities.map((city, cityIdx) => 
-                selectedMetrics.map((metricId, metricIdx) => {
-                  const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
-                  if (!metric || !visibleMetrics[metricId]) return null;
-                  
-                  // Find which axis this metric belongs to
-                  const axisForMetric = axisConfig.find(a => a.metrics.includes(metricId));
-                  if (!axisForMetric) return null;
-                  
-                  const dataKey = `${city.name}_${metricId}`;
-                  const colorIndex = (cityIdx * selectedMetrics.length + metricIdx) % CHART_COLORS.length;
-                  const color = CHART_COLORS[colorIndex];
-                  
-                  return (
-                    <Line
-                      key={`${city.name}-${metricId}`}
-                      type="monotone"
-                      dataKey={dataKey}
-                      stroke={color}
-                      strokeWidth={2}
-                      name={`${city.name} - ${metric.label}${metric.unit ? ` (${metric.unit})` : ''}`}
-                      dot={false}
-                      activeDot={{ r: 4, strokeWidth: 0 }}
-                      animationDuration={1000}
-                      connectNulls
-                      yAxisId={axisForMetric.id}
-                    />
-                  );
-                })
-              )}
-            </LineChart>
-          </ResponsiveContainer>
+                
+                {/* Multiple Y-Axes based on metric units */}
+                {axisConfig.map((axis) => (
+                  <YAxis
+                    key={axis.id}
+                    yAxisId={axis.id}
+                    orientation={axis.orientation}
+                    stroke="hsl(var(--muted-foreground))"
+                    style={{ fontSize: '10px' }}
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                    label={{ 
+                      value: axis.unit, 
+                      angle: -90, 
+                      position: axis.orientation === 'left' ? 'insideLeft' : 'insideRight',
+                      style: { fontSize: '11px', fill: 'hsl(var(--muted-foreground))' }
+                    }}
+                    domain={['auto', 'auto']}
+                  />
+                ))}
+                
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                    padding: "8px 12px",
+                    fontSize: "11px"
+                  }}
+                  labelStyle={{ color: "hsl(var(--muted-foreground))", marginBottom: "4px" }}
+                />
+                
+                <Legend 
+                  wrapperStyle={{
+                    fontSize: '10px',
+                    paddingTop: '10px'
+                  }}
+                  iconType="line"
+                />
+                
+                {/* Render lines for each city and metric combination */}
+                {selectedCities.map((city, cityIdx) => 
+                  selectedMetrics.map((metricId, metricIdx) => {
+                    const metric = AVAILABLE_METRICS.find(m => m.id === metricId);
+                    if (!metric || !visibleMetrics[metricId]) return null;
+                    
+                    // Find which axis this metric belongs to
+                    const axisForMetric = axisConfig.find(a => a.metrics.includes(metricId));
+                    if (!axisForMetric) return null;
+                    
+                    const dataKey = `${city.name}_${metricId}`;
+                    const colorIndex = (cityIdx * selectedMetrics.length + metricIdx) % CHART_COLORS.length;
+                    const color = CHART_COLORS[colorIndex];
+                    
+                    return (
+                      <Line
+                        key={`${city.name}-${metricId}`}
+                        type="monotone"
+                        dataKey={dataKey}
+                        stroke={color}
+                        strokeWidth={2}
+                        name={`${city.name} - ${metric.label}${metric.unit ? ` (${metric.unit})` : ''}`}
+                        dot={false}
+                        activeDot={{ r: 4, strokeWidth: 0 }}
+                        animationDuration={1000}
+                        connectNulls
+                        yAxisId={axisForMetric.id}
+                      />
+                    );
+                  })
+                )}
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
       </Card>
     </div>
