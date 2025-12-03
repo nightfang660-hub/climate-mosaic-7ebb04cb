@@ -32,6 +32,7 @@ export interface GeocodingResult {
   latitude: number;
   longitude: number;
   country: string;
+  admin1?: string; // State/Region
 }
 
 /**
@@ -118,7 +119,36 @@ export const geocodeCity = async (cityName: string): Promise<GeocodingResult | n
 };
 
 /**
+ * Search locations with autocomplete suggestions
+ */
+export const searchLocations = async (query: string): Promise<GeocodingResult[]> => {
+  if (!query || query.length < 2) return [];
+  
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=8&language=en&format=json`;
+  
+  const response = await fetch(url);
+  if (!response.ok) {
+    return [];
+  }
+  
+  const data = await response.json();
+  
+  if (!data.results || data.results.length === 0) {
+    return [];
+  }
+  
+  return data.results.map((result: any) => ({
+    name: result.name,
+    latitude: result.latitude,
+    longitude: result.longitude,
+    country: result.country,
+    admin1: result.admin1, // State/Region
+  }));
+};
+
+/**
  * Fetch 24-hour hourly forecast from Open-Meteo API
+ * Returns data starting from current hour
  */
 export const fetchHourlyForecast = async (lat: number, lon: number): Promise<HourlyForecastData[]> => {
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation,wind_speed_10m,weather_code&timezone=auto&forecast_days=2`;
@@ -131,14 +161,42 @@ export const fetchHourlyForecast = async (lat: number, lon: number): Promise<Hou
   const data = await response.json();
   const hourly = data.hourly;
   
-  // Get next 24 hours
-  return hourly.time.slice(0, 24).map((time: string, index: number) => ({
-    time: new Date(time).toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }),
-    temperature: hourly.temperature_2m[index],
-    precipitation: hourly.precipitation[index],
-    windSpeed: hourly.wind_speed_10m[index],
-    weatherCode: hourly.weather_code[index],
-  }));
+  // Find current hour index
+  const now = new Date();
+  const currentHour = now.getHours();
+  
+  // API returns data starting from midnight, find the index for current hour
+  let startIndex = 0;
+  for (let i = 0; i < hourly.time.length; i++) {
+    const hourTime = new Date(hourly.time[i]);
+    if (hourTime.getDate() === now.getDate() && hourTime.getHours() >= currentHour) {
+      startIndex = i;
+      break;
+    }
+    // If we passed today, use tomorrow's first hour
+    if (hourTime.getDate() > now.getDate()) {
+      startIndex = i;
+      break;
+    }
+  }
+  
+  // Get 24 hours starting from current hour
+  const result: HourlyForecastData[] = [];
+  for (let i = 0; i < 24 && startIndex + i < hourly.time.length; i++) {
+    const idx = startIndex + i;
+    const time = new Date(hourly.time[idx]);
+    const isNow = i === 0;
+    
+    result.push({
+      time: isNow ? 'Now' : time.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true }),
+      temperature: hourly.temperature_2m[idx],
+      precipitation: hourly.precipitation[idx],
+      windSpeed: hourly.wind_speed_10m[idx],
+      weatherCode: hourly.weather_code[idx],
+    });
+  }
+  
+  return result;
 };
 
 export interface HistoricalWeatherData {
