@@ -216,15 +216,6 @@ export const HistoricalChart = ({ initialLocation }: HistoricalChartProps) => {
       .sort((a, b) => a.timestamp - b.timestamp);
   }, [rawData, selectedCities, selectedMetrics]);
 
-  if (loading) {
-    return (
-      <Card className="p-6 bg-card animate-fade-in">
-        <Skeleton className="h-8 w-64 mb-4" />
-        <Skeleton className="h-[400px] w-full" />
-      </Card>
-    );
-  }
-
   // Group metrics by their unit type for multi-axis support
   const metricsByAxis = useMemo(() => {
     const axes: { [key: string]: string[] } = {
@@ -277,9 +268,22 @@ export const HistoricalChart = ({ initialLocation }: HistoricalChartProps) => {
     return config;
   }, [metricsByAxis]);
 
-  // Early return for SSR safety
-  if (typeof window === "undefined") {
-    return null;
+  // All hooks called - now safe to do early returns
+  
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <MetricSelector
+          selectedMetrics={selectedMetrics}
+          onMetricsChange={handleMetricsChange}
+        />
+        <Card className="p-6 bg-card animate-fade-in">
+          <Skeleton className="h-8 w-64 mb-4" />
+          <Skeleton className="h-[400px] w-full" />
+        </Card>
+      </div>
+    );
   }
 
   // Show empty state when no metrics selected
@@ -300,7 +304,7 @@ export const HistoricalChart = ({ initialLocation }: HistoricalChartProps) => {
   }
 
   // Show error state
-  if (error && !loading) {
+  if (error) {
     return (
       <div className="space-y-4">
         <MetricSelector
