@@ -2,95 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Premium Weather Dashboard Design System */
 
 @layer base {
   :root {
-    --background: 215 25% 12%;
+    /* Deep Ocean Dark Theme */
+    --background: 220 25% 8%;
     --foreground: 210 40% 98%;
 
-    --card: 215 22% 16%;
+    --card: 220 22% 12%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 215 22% 16%;
+    --popover: 220 22% 14%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 100% 56%;
-    --primary-foreground: 210 40% 98%;
+    /* Electric Blue Primary */
+    --primary: 200 100% 50%;
+    --primary-foreground: 220 25% 8%;
 
-    --secondary: 215 20% 20%;
+    --secondary: 220 20% 18%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 215 20% 20%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 220 20% 16%;
+    --muted-foreground: 220 15% 55%;
 
-    --accent: 210 100% 56%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 200 100% 50%;
+    --accent-foreground: 220 25% 8%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 215 20% 25%;
-    --input: 215 20% 20%;
-    --ring: 210 100% 56%;
+    /* Warning colors for alerts */
+    --warning: 38 92% 50%;
+    --warning-foreground: 220 25% 8%;
 
-    --radius: 0.75rem;
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
 
-    --sidebar-background: 215 28% 10%;
+    --border: 220 20% 20%;
+    --input: 220 20% 16%;
+    --ring: 200 100% 50%;
+
+    --radius: 0.875rem;
+
+    /* Sidebar */
+    --sidebar-background: 220 28% 6%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 100% 56%;
+    --sidebar-primary: 200 100% 50%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 215 22% 16%;
+    --sidebar-accent: 220 22% 14%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 215 20% 25%;
-    --sidebar-ring: 210 100% 56%;
+    --sidebar-border: 220 20% 18%;
+    --sidebar-ring: 200 100% 50%;
 
-    --chart-1: 210 100% 56%;
-    --chart-2: 200 100% 50%;
-    --chart-3: 190 100% 45%;
-    --chart-4: 180 100% 40%;
-    --chart-5: 170 100% 35%;
+    /* Chart colors - vibrant gradient */
+    --chart-1: 200 100% 50%;
+    --chart-2: 160 100% 45%;
+    --chart-3: 280 100% 60%;
+    --chart-4: 45 100% 50%;
+    --chart-5: 320 100% 55%;
+
+    /* Glassmorphism */
+    --glass: 220 22% 12% / 0.8;
+    --glass-border: 220 20% 30% / 0.3;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(200 100% 50%), hsl(180 100% 40%));
+    --gradient-accent: linear-gradient(135deg, hsl(200 100% 50%), hsl(280 100% 60%));
+    --gradient-card: linear-gradient(180deg, hsl(220 22% 14%), hsl(220 22% 10%));
+    --gradient-glow: radial-gradient(ellipse at center, hsl(200 100% 50% / 0.15), transparent 70%);
+
+    /* Shadows */
+    --shadow-sm: 0 2px 8px hsl(220 25% 8% / 0.4);
+    --shadow-md: 0 4px 16px hsl(220 25% 8% / 0.5);
+    --shadow-lg: 0 8px 32px hsl(220 25% 8% / 0.6);
+    --shadow-glow: 0 0 30px hsl(200 100% 50% / 0.3);
   }
 
   .dark {
-    --background: 215 25% 12%;
+    --background: 220 25% 8%;
     --foreground: 210 40% 98%;
-
-    --card: 215 22% 16%;
+    --card: 220 22% 12%;
     --card-foreground: 210 40% 98%;
-
-    --popover: 215 22% 16%;
+    --popover: 220 22% 14%;
     --popover-foreground: 210 40% 98%;
-
-    --primary: 210 100% 56%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 215 20% 20%;
+    --primary: 200 100% 50%;
+    --primary-foreground: 220 25% 8%;
+    --secondary: 220 20% 18%;
     --secondary-foreground: 210 40% 98%;
-
-    --muted: 215 20% 20%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 210 100% 56%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
+    --muted: 220 20% 16%;
+    --muted-foreground: 220 15% 55%;
+    --accent: 200 100% 50%;
+    --accent-foreground: 220 25% 8%;
+    --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
-
-    --border: 215 20% 25%;
-    --input: 215 20% 20%;
-    --ring: 210 100% 56%;
-
-    --sidebar-background: 215 28% 10%;
+    --border: 220 20% 20%;
+    --input: 220 20% 16%;
+    --ring: 200 100% 50%;
+    --sidebar-background: 220 28% 6%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 100% 56%;
+    --sidebar-primary: 200 100% 50%;
     --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 215 22% 16%;
+    --sidebar-accent: 220 22% 14%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 215 20% 25%;
-    --sidebar-ring: 210 100% 56%;
+    --sidebar-border: 220 20% 18%;
+    --sidebar-ring: 200 100% 50%;
   }
 }
 
@@ -100,70 +116,253 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/50;
   }
 
   /* Leaflet map styles */
   .leaflet-container {
-    @apply h-full w-full rounded-lg;
+    @apply h-full w-full rounded-xl;
+    background: hsl(var(--card));
   }
 
   .leaflet-control-attribution {
-    @apply text-xs opacity-50;
+    @apply text-xs opacity-50 bg-card/80 backdrop-blur-sm;
   }
 
-  /* Rain animation */
-  @keyframes rainFall {
-    0% {
-      transform: translateY(-100vh);
-      opacity: 0.8;
-    }
-    100% {
-      transform: translateY(100vh);
-      opacity: 0;
-    }
+  .leaflet-popup-content-wrapper {
+    @apply bg-card border border-border rounded-lg shadow-lg;
   }
 
-  .rain-drop {
-    position: absolute;
-    width: 2px;
-    height: 20px;
-    background: linear-gradient(to bottom, transparent, rgba(135, 206, 250, 0.6));
-    animation: rainFall 1s linear infinite;
-    pointer-events: none;
-  }
-
-  /* Wind animation */
-  @keyframes windFlow {
-    0% {
-      transform: translateX(-100vw);
-      opacity: 0;
-    }
-    50% {
-      opacity: 0.6;
-    }
-    100% {
-      transform: translateX(100vw);
-      opacity: 0;
-    }
-  }
-
-  .wind-particle {
-    position: absolute;
-    width: 40px;
-    height: 2px;
-    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
-    animation: windFlow 3s linear infinite;
-    pointer-events: none;
+  .leaflet-popup-tip {
+    @apply bg-card;
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+@layer components {
+  /* Glass card effect */
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-lg;
   }
 
-  body {
-    @apply bg-background text-foreground;
+  /* Glow effect for primary elements */
+  .glow-effect {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.4), 0 0 40px hsl(var(--primary) / 0.2);
   }
+
+  /* Animated gradient background */
+  .gradient-bg {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--background)) 0%,
+      hsl(220 25% 10%) 50%,
+      hsl(var(--background)) 100%
+    );
+  }
+
+  /* Stat card hover effect */
+  .stat-card {
+    @apply relative overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-lg;
+  }
+
+  .stat-card::before {
+    content: "";
+    @apply absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-300;
+  }
+
+  .stat-card:hover::before {
+    @apply opacity-100;
+  }
+
+  /* Weather metric card */
+  .metric-card {
+    @apply relative p-4 rounded-xl bg-gradient-to-br from-muted/80 to-muted/40 border border-border/30;
+    @apply backdrop-blur-sm transition-all duration-300;
+  }
+
+  .metric-card:hover {
+    @apply border-primary/30 shadow-md;
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.1);
+  }
+
+  /* Temperature display */
+  .temp-display {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  /* Animated pulse for live indicators */
+  .pulse-live {
+    @apply relative;
+  }
+
+  .pulse-live::after {
+    content: "";
+    @apply absolute -right-1 -top-1 w-2 h-2 bg-success rounded-full;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.2);
+    }
+  }
+
+  /* Map container styling */
+  .map-container {
+    @apply relative rounded-2xl overflow-hidden border border-border/50 shadow-xl;
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(220 22% 8%) 100%);
+  }
+
+  /* Sidebar nav item */
+  .nav-item {
+    @apply relative overflow-hidden rounded-xl transition-all duration-200;
+  }
+
+  .nav-item.active {
+    @apply bg-gradient-to-r from-primary/20 to-primary/5;
+    box-shadow: inset 0 0 20px hsl(var(--primary) / 0.1);
+  }
+
+  .nav-item.active::before {
+    content: "";
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full;
+  }
+
+  /* Chart tooltip */
+  .chart-tooltip {
+    @apply bg-popover/95 backdrop-blur-md border border-border rounded-xl shadow-xl p-3;
+  }
+}
+
+@layer utilities {
+  /* Text gradient */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
+    background-size: 200% auto;
+  }
+
+  /* Shimmer loading effect */
+  .shimmer {
+    @apply relative overflow-hidden;
+  }
+
+  .shimmer::after {
+    content: "";
+    @apply absolute inset-0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsl(var(--primary) / 0.05),
+      transparent
+    );
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Fade in animation */
+  .animate-fade-up {
+    animation: fadeUp 0.5s ease-out forwards;
+  }
+
+  @keyframes fadeUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Stagger children animations */
+  .stagger-children > * {
+    animation: fadeUp 0.4s ease-out forwards;
+    opacity: 0;
+  }
+
+  .stagger-children > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger-children > *:nth-child(2) { animation-delay: 0.1s; }
+  .stagger-children > *:nth-child(3) { animation-delay: 0.15s; }
+  .stagger-children > *:nth-child(4) { animation-delay: 0.2s; }
+  .stagger-children > *:nth-child(5) { animation-delay: 0.25s; }
+  .stagger-children > *:nth-child(6) { animation-delay: 0.3s; }
+  .stagger-children > *:nth-child(7) { animation-delay: 0.35s; }
+  .stagger-children > *:nth-child(8) { animation-delay: 0.4s; }
+  .stagger-children > *:nth-child(9) { animation-delay: 0.45s; }
+}
+
+/* Weather animations */
+@keyframes rainFall {
+  0% {
+    transform: translateY(-100vh);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+.rain-drop {
+  position: absolute;
+  width: 2px;
+  height: 20px;
+  background: linear-gradient(to bottom, transparent, hsl(var(--primary) / 0.6));
+  animation: rainFall 1s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes windFlow {
+  0% {
+    transform: translateX(-100vw);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(100vw);
+    opacity: 0;
+  }
+}
+
+.wind-particle {
+  position: absolute;
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(to right, transparent, hsl(var(--foreground) / 0.4), transparent);
+  animation: windFlow 3s linear infinite;
+  pointer-events: none;
 }

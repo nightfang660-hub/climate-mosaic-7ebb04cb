@@ -4,7 +4,7 @@ import { LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Button } from "@/components/ui/button";
-import { Maximize2, Minimize2, Locate } from "lucide-react";
+import { Maximize2, Minimize2, Locate, Map } from "lucide-react";
 import { LayerControl, LayerType, ForecastLayer, SatelliteLayer } from "./LayerControl";
 import { MiniMapNavigator } from "./MiniMapNavigator";
 import { MapAnnotations } from "./MapAnnotations";
@@ -199,7 +199,7 @@ export const WeatherMapWithLayers = ({
           <Button
             variant="secondary"
             size="icon"
-            className="bg-card/95 backdrop-blur-sm border-border shadow-lg hover:bg-card"
+            className="bg-card/90 backdrop-blur-xl border-border/50 shadow-xl hover:bg-card hover:scale-105 transition-all duration-200"
             onClick={onToggleFullscreen}
           >
             {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
@@ -209,7 +209,7 @@ export const WeatherMapWithLayers = ({
           <Button
             variant="secondary"
             size="icon"
-            className="bg-card/95 backdrop-blur-sm border-border shadow-lg hover:bg-card"
+            className="bg-card/90 backdrop-blur-xl border-border/50 shadow-xl hover:bg-card hover:scale-105 transition-all duration-200"
             onClick={handleLocateMe}
             title="Center on my location"
           >
@@ -219,10 +219,18 @@ export const WeatherMapWithLayers = ({
       </div>
 
       {/* Layer Badge */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000] px-4 py-2 bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-lg">
-        <p className="text-sm font-medium text-foreground">
-          Layer: {getLayerLabel()}
-        </p>
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-card/90 backdrop-blur-xl border border-border/50 rounded-full shadow-xl">
+          <Map className="w-4 h-4 text-primary" />
+          <p className="text-sm font-medium text-foreground">
+            {getLayerLabel()}
+          </p>
+          {showRadar && (
+            <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs font-medium rounded-full">
+              +Radar
+            </span>
+          )}
+        </div>
       </div>
 
       <LayerControl
@@ -254,7 +262,7 @@ export const WeatherMapWithLayers = ({
         onToggle={() => setShowAnnotations(!showAnnotations)}
       />
 
-      <div className="h-full w-full rounded-lg overflow-hidden shadow-2xl">
+      <div className="h-full w-full rounded-2xl overflow-hidden shadow-2xl border border-border/30">
         <MapContainer 
           center={mapCenter} 
           zoom={mapZoom} 
@@ -300,9 +308,12 @@ export const WeatherMapWithLayers = ({
 
           <Marker position={mapCenter}>
             <Popup>
-              Selected Location
-              <br />
-              {mapCenter[0].toFixed(4)}°, {mapCenter[1].toFixed(4)}°
+              <div className="p-1">
+                <p className="font-medium">Selected Location</p>
+                <p className="text-sm text-muted-foreground">
+                  {mapCenter[0].toFixed(4)}°, {mapCenter[1].toFixed(4)}°
+                </p>
+              </div>
             </Popup>
           </Marker>
           <MapClickHandler onMapClick={onMapClick} />

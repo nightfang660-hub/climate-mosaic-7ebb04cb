@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, MapPin, Loader2, X } from "lucide-react";
+import { Search, MapPin, Loader2, X, Navigation } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { searchLocations, GeocodingResult } from "@/lib/weather-api";
 
@@ -60,7 +60,10 @@ export const SearchBox = ({ onSearch, onLocationSelect }: SearchBoxProps) => {
   }, []);
 
   const handleSelect = (location: GeocodingResult) => {
-    setQuery(location.name);
+    const displayName = location.admin1 
+      ? `${location.name}, ${location.admin1}`
+      : location.name;
+    setQuery(displayName);
     setShowSuggestions(false);
     setSuggestions([]);
     
@@ -105,65 +108,82 @@ export const SearchBox = ({ onSearch, onLocationSelect }: SearchBoxProps) => {
   };
 
   return (
-    <div className="relative w-full">
-      <form onSubmit={handleSubmit} className="relative">
+    <div className="relative w-full max-w-md">
+      <form onSubmit={handleSubmit} className="relative group">
         <label htmlFor="city-search" className="sr-only">
           Search for a location
         </label>
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-        <Input
-          ref={inputRef}
-          id="city-search"
-          name="city"
-          type="text"
-          placeholder="Search any location..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-          onKeyDown={handleKeyDown}
-          className="pl-10 pr-10 bg-background/50 backdrop-blur-sm border-border/50 text-foreground h-11 text-base"
-          autoComplete="off"
-        />
-        {isLoading && (
-          <Loader2 className="absolute right-10 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
-        )}
-        {query && !isLoading && (
-          <button
-            type="button"
-            onClick={clearSearch}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full transition-colors"
-          >
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
-        )}
+        
+        {/* Glow effect on focus */}
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/50 to-primary/30 rounded-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300 blur-sm" />
+        
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground transition-colors group-focus-within:text-primary" />
+          <Input
+            ref={inputRef}
+            id="city-search"
+            name="city"
+            type="text"
+            placeholder="Search any location..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+            onKeyDown={handleKeyDown}
+            className="pl-12 pr-12 bg-card/80 backdrop-blur-xl border-border/50 text-foreground h-12 text-base rounded-xl shadow-lg focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+            autoComplete="off"
+          />
+          {isLoading && (
+            <Loader2 className="absolute right-12 top-1/2 -translate-y-1/2 w-4 h-4 text-primary animate-spin" />
+          )}
+          {query && !isLoading && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 hover:bg-muted rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+            </button>
+          )}
+        </div>
       </form>
 
       {/* Suggestions dropdown */}
       {showSuggestions && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}
-          className="absolute top-full left-0 right-0 mt-2 bg-card/95 backdrop-blur-md border border-border/50 rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in-0 slide-in-from-top-2 duration-200"
+          className="absolute top-full left-0 right-0 mt-2 bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in-0 slide-in-from-top-2 duration-200"
         >
-          <div className="p-2 border-b border-border/30">
-            <p className="text-xs text-muted-foreground px-2">
+          <div className="p-3 border-b border-border/30 bg-muted/30">
+            <p className="text-xs text-muted-foreground flex items-center gap-2">
+              <Navigation className="w-3 h-3" />
               {suggestions.length} location{suggestions.length > 1 ? 's' : ''} found
             </p>
           </div>
-          <ul className="max-h-80 overflow-y-auto py-1">
+          <ul className="max-h-80 overflow-y-auto py-2">
             {suggestions.map((location, index) => (
-              <li key={`${location.latitude}-${location.longitude}`}>
+              <li key={`${location.latitude}-${location.longitude}-${index}`}>
                 <button
                   type="button"
                   onClick={() => handleSelect(location)}
-                  className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors ${
+                  className={`w-full flex items-start gap-4 px-4 py-3.5 text-left transition-all duration-150 ${
                     index === selectedIndex
-                      ? "bg-primary/10 text-primary"
-                      : "hover:bg-muted/50"
+                      ? "bg-primary/10 border-l-2 border-primary"
+                      : "hover:bg-muted/50 border-l-2 border-transparent"
                   }`}
                 >
-                  <MapPin className="w-5 h-5 mt-0.5 flex-shrink-0 text-primary" />
+                  <div className={`mt-0.5 p-2 rounded-lg ${
+                    index === selectedIndex ? 'bg-primary/20' : 'bg-muted/50'
+                  }`}>
+                    <MapPin className={`w-4 h-4 ${
+                      index === selectedIndex ? 'text-primary' : 'text-muted-foreground'
+                    }`} />
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{location.name}</p>
+                    <p className={`font-medium truncate ${
+                      index === selectedIndex ? 'text-primary' : 'text-foreground'
+                    }`}>
+                      {location.name}
+                    </p>
                     <p className="text-sm text-muted-foreground truncate">
                       {[location.admin1, location.country]
                         .filter(Boolean)
@@ -179,10 +199,12 @@ export const SearchBox = ({ onSearch, onLocationSelect }: SearchBoxProps) => {
 
       {/* No results message */}
       {showSuggestions && query.length >= 2 && !isLoading && suggestions.length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-card/95 backdrop-blur-md border border-border/50 rounded-xl shadow-2xl p-6 text-center z-50 animate-in fade-in-0 slide-in-from-top-2 duration-200">
-          <MapPin className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-          <p className="text-muted-foreground">No locations found</p>
-          <p className="text-xs text-muted-foreground/70 mt-1">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-card/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl p-8 text-center z-50 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+          <div className="p-3 bg-muted/30 rounded-xl w-fit mx-auto mb-3">
+            <MapPin className="w-6 h-6 text-muted-foreground" />
+          </div>
+          <p className="text-foreground font-medium">No locations found</p>
+          <p className="text-sm text-muted-foreground mt-1">
             Try a different search term
           </p>
         </div>

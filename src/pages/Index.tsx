@@ -41,6 +41,7 @@ const Index = () => {
   const [hourlyData, setHourlyData] = useState<HourlyForecastData[]>([]);
   const [weatherAlerts, setWeatherAlerts] = useState<WeatherAlert[]>([]);
   const [locationName, setLocationName] = useState<string>("");
+  const [skipReverseGeocode, setSkipReverseGeocode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -65,32 +66,41 @@ const Index = () => {
         const alerts = analyzeWeatherAlerts(weather);
         setWeatherAlerts(alerts);
         
-        // Reverse geocode to get location name using Nominatim
-        try {
-          const reverseGeocodeUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.lat}&lon=${location.lon}&zoom=10&addressdetails=1`;
-          const reverseResponse = await fetch(reverseGeocodeUrl, {
-            headers: {
-              'User-Agent': 'WeatherDashboard/1.0'
+        // Only reverse geocode if location wasn't set from search
+        if (!skipReverseGeocode) {
+          try {
+            // Use zoom=18 for more precise results (village/locality level)
+            const reverseGeocodeUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.lat}&lon=${location.lon}&zoom=18&addressdetails=1`;
+            const reverseResponse = await fetch(reverseGeocodeUrl, {
+              headers: {
+                'User-Agent': 'WeatherDashboard/1.0'
+              }
+            });
+            if (reverseResponse.ok) {
+              const reverseData = await reverseResponse.json();
+              const address = reverseData.address;
+              // Get the most specific location name available
+              const locality = address.village || address.hamlet || address.suburb || 
+                              address.town || address.city || address.county;
+              const state = address.state;
+              const country = address.country;
+              
+              if (locality && state && country) {
+                setLocationName(`${locality}, ${state}, ${country}`);
+              } else if (locality && country) {
+                setLocationName(`${locality}, ${country}`);
+              } else if (reverseData.display_name) {
+                const parts = reverseData.display_name.split(',');
+                setLocationName(parts.slice(0, 3).join(',').trim());
+              }
             }
-          });
-          if (reverseResponse.ok) {
-            const reverseData = await reverseResponse.json();
-            const address = reverseData.address;
-            const city = address.city || address.town || address.village || address.county || address.state;
-            const country = address.country;
-            if (city && country) {
-              setLocationName(`${city}, ${country}`);
-            } else if (reverseData.display_name) {
-              // Fallback to display name if city/country not available
-              const parts = reverseData.display_name.split(',');
-              setLocationName(parts.slice(0, 2).join(','));
-            }
+          } catch (reverseError) {
+            console.error('Reverse geocoding failed:', reverseError);
+            setLocationName(`Location (${location.lat.toFixed(4)}°, ${location.lon.toFixed(4)}°)`);
           }
-        } catch (reverseError) {
-          console.error('Reverse geocoding failed:', reverseError);
-          // Set a fallback location name with coordinates
-          setLocationName(`Location (${location.lat.toFixed(2)}°, ${location.lon.toFixed(2)}°)`);
         }
+        // Reset the skip flag after loading
+        setSkipReverseGeocode(false);
       } catch (error) {
         toast({
           title: "Error",
@@ -159,12 +169,14 @@ const Index = () => {
     });
   };
 
-  const handleLocationSelect = (location: GeocodingResult) => {
-    setLocation({ lat: location.latitude, lon: location.longitude });
-    const displayName = location.admin1 
-      ? `${location.name}, ${location.admin1}, ${location.country}`
-      : `${location.name}, ${location.country}`;
+  const handleLocationSelect = (loc: GeocodingResult) => {
+    // Set flag to skip reverse geocoding since we have the exact location name
+    setSkipReverseGeocode(true);
+    const displayName = loc.admin1 
+      ? `${loc.name}, ${loc.admin1}, ${loc.country}`
+      : `${loc.name}, ${loc.country}`;
     setLocationName(displayName);
+    setLocation({ lat: loc.latitude, lon: loc.longitude });
     toast({
       title: "Location updated",
       description: `Showing weather for ${displayName}`,
