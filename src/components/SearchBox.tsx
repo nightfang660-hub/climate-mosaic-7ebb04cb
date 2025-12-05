@@ -74,12 +74,30 @@ export const SearchBox = ({ onSearch, onLocationSelect }: SearchBoxProps) => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedIndex >= 0 && suggestions[selectedIndex]) {
       handleSelect(suggestions[selectedIndex]);
     } else if (query.trim()) {
-      onSearch(query.trim());
+      // If there are suggestions available, select the first one
+      if (suggestions.length > 0) {
+        handleSelect(suggestions[0]);
+      } else {
+        // Try to search and get suggestions first
+        setIsLoading(true);
+        try {
+          const results = await searchLocations(query.trim());
+          if (results.length > 0) {
+            handleSelect(results[0]);
+          } else {
+            onSearch(query.trim());
+          }
+        } catch {
+          onSearch(query.trim());
+        } finally {
+          setIsLoading(false);
+        }
+      }
       setShowSuggestions(false);
     }
   };

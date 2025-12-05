@@ -4,10 +4,11 @@ import { LatLngExpression } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import { Button } from "@/components/ui/button";
-import { Maximize2, Minimize2, Locate, Map } from "lucide-react";
-import { LayerControl, LayerType, ForecastLayer, SatelliteLayer } from "./LayerControl";
+import { Maximize2, Minimize2, Locate, Map, Search, X } from "lucide-react";
+import { MapLayerSelector, LayerType, ForecastLayer, SatelliteLayer } from "./MapLayerSelector";
 import { MiniMapNavigator } from "./MiniMapNavigator";
 import { MapAnnotations } from "./MapAnnotations";
+import { searchLocations, GeocodingResult } from "@/lib/weather-api";
 
 const OPENWEATHER_API_KEY = "2647b2146eb6884d1a64a8041ea0da01";
 
@@ -97,6 +98,13 @@ export const WeatherMapWithLayers = ({
   const [mapZoom, setMapZoom] = useState(isFullscreen ? 7 : 10);
   const [showAnnotations, setShowAnnotations] = useState(false);
   const [annotations, setAnnotations] = useState<any[]>([]);
+  
+  // Map search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<GeocodingResult[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<GeocodingResult | null>(null);
 
   // Get user's geolocation on mount
   useEffect(() => {
@@ -162,6 +170,43 @@ export const WeatherMapWithLayers = ({
     setAnnotations([]);
   };
 
+  // Map search handlers
+  const handleMapSearch = async (query: string) => {
+    if (query.length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+    
+    setIsSearching(true);
+    try {
+      const results = await searchLocations(query);
+      setSearchResults(results);
+      setShowSearchResults(results.length > 0);
+    } catch (error) {
+      console.error("Map search error:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectSearchResult = (result: GeocodingResult) => {
+    setSelectedLocation(result);
+    setMapCenter([result.latitude, result.longitude]);
+    onMapClick(result.latitude, result.longitude);
+    setSearchQuery(result.admin1 ? `${result.name}, ${result.admin1}` : result.name);
+    setShowSearchResults(false);
+    setSearchResults([]);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setShowSearchResults(false);
+    setSelectedLocation(null);
+  };
+
   const getLayerLabel = () => {
     if (layerType === "forecast") {
       const labels: Record<ForecastLayer, string> = {
@@ -193,6 +238,82 @@ export const WeatherMapWithLayers = ({
 
   return (
     <div className="relative h-full w-full">
+      {/* Map Search Bar */}
+      <div className="absolute top-4 left-4 z-[1000] w-80">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search location on map..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              handleMapSearch(e.target.value);
+            }}
+            className="w-full pl-10 pr-10 py-3 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          {searchQuery && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          )}
+        </div>
+        
+        {/* Search Results Dropdown */}
+        {showSearchResults && searchResults.length > 0 && (
+          <div className="mt-2 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl overflow-hidden">
+            <div className="max-h-64 overflow-y-auto">
+              {searchResults.map((result, index) => (
+                <button
+                  key={`${result.latitude}-${result.longitude}-${index}`}
+                  onClick={() => handleSelectSearchResult(result)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left border-b border-border/30 last:border-b-0"
+                >
+                  <div className="p-2 bg-muted/50 rounded-lg">
+                    <Map className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm text-foreground truncate">{result.name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {[result.admin1, result.country].filter(Boolean).join(", ")}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Selected Location Info Card */}
+        {selectedLocation && (
+          <div className="mt-2 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Map className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-foreground">{selectedLocation.name}</h4>
+                <p className="text-sm text-muted-foreground">
+                  {[selectedLocation.admin1, selectedLocation.country].filter(Boolean).join(", ")}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {selectedLocation.latitude.toFixed(4)}°, {selectedLocation.longitude.toFixed(4)}°
+                </p>
+              </div>
+              <button
+                onClick={clearSearch}
+                className="p-1 hover:bg-muted rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Control Buttons */}
       <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
         {onToggleFullscreen && (
@@ -218,8 +339,8 @@ export const WeatherMapWithLayers = ({
         )}
       </div>
 
-      {/* Layer Badge */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[1000]">
+      {/* Layer Badge - Moved to center-top */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[999] pointer-events-none">
         <div className="flex items-center gap-2 px-4 py-2.5 bg-card/90 backdrop-blur-xl border border-border/50 rounded-full shadow-xl">
           <Map className="w-4 h-4 text-primary" />
           <p className="text-sm font-medium text-foreground">
@@ -233,7 +354,8 @@ export const WeatherMapWithLayers = ({
         </div>
       </div>
 
-      <LayerControl
+      {/* Google Maps-style Layer Selector */}
+      <MapLayerSelector
         activeLayerType={layerType}
         activeForecastLayer={forecastLayer}
         activeSatelliteLayer={satelliteLayer}
