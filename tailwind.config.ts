@@ -64,6 +64,11 @@ export default {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+        "layer-icon": {
+          active: "hsl(var(--layer-icon-active))",
+          inactive: "hsl(var(--layer-icon-inactive))",
+          hover: "hsl(var(--layer-icon-hover))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
