@@ -58,10 +58,10 @@ export const MapLayerSelector = ({
 
   return (
     <TooltipProvider>
-      <div className="absolute bottom-6 right-4 z-[1000]">
+      <div className="absolute bottom-6 right-4 z-[1000] max-h-[calc(100vh-100px)] flex flex-col-reverse">
         {/* Expanded Panel */}
         {isExpanded && (
-          <div className="mb-3 bg-card/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 overflow-hidden animate-in fade-in-0 slide-in-from-bottom-2 duration-200 w-56">
+          <div className="mb-3 bg-card/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/50 overflow-hidden animate-in fade-in-0 slide-in-from-bottom-2 duration-200 w-56 max-h-[70vh] overflow-y-auto">
             {/* Header */}
             <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between bg-muted/30">
               <span className="text-sm font-semibold text-foreground">Map Layers</span>
