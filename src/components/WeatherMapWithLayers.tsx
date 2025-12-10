@@ -238,24 +238,24 @@ export const WeatherMapWithLayers = ({
 
   return (
     <div className="relative h-full w-full">
-      {/* Map Search Bar */}
-      <div className="absolute top-4 left-4 z-[1000] w-80">
+      {/* Map Search Bar - Responsive */}
+      <div className="absolute top-3 left-3 right-16 sm:right-auto sm:left-4 sm:top-4 z-[1000] sm:w-72 md:w-80">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search location on map..."
+            placeholder="Search or enter coordinates..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
               handleMapSearch(e.target.value);
             }}
-            className="w-full pl-10 pr-10 py-3 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full pl-9 pr-9 py-2.5 sm:py-3 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           {searchQuery && (
             <button
               onClick={clearSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-lg transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-lg transition-colors"
             >
               <X className="w-4 h-4 text-muted-foreground" />
             </button>
@@ -264,20 +264,20 @@ export const WeatherMapWithLayers = ({
         
         {/* Search Results Dropdown */}
         {showSearchResults && searchResults.length > 0 && (
-          <div className="mt-2 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl overflow-hidden">
-            <div className="max-h-64 overflow-y-auto">
+          <div className="mt-2 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-2xl overflow-hidden max-h-[50vh]">
+            <div className="max-h-48 sm:max-h-64 overflow-y-auto">
               {searchResults.map((result, index) => (
                 <button
                   key={`${result.latitude}-${result.longitude}-${index}`}
                   onClick={() => handleSelectSearchResult(result)}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left border-b border-border/30 last:border-b-0"
+                  className="w-full flex items-center gap-2 sm:gap-3 px-3 py-2.5 hover:bg-muted/50 transition-colors text-left border-b border-border/30 last:border-b-0"
                 >
-                  <div className="p-2 bg-muted/50 rounded-lg">
-                    <Map className="w-4 h-4 text-primary" />
+                  <div className="p-1.5 bg-muted/50 rounded-lg flex-shrink-0">
+                    <Map className="w-3.5 h-3.5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-foreground truncate">{result.name}</p>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="font-medium text-xs sm:text-sm text-foreground truncate">{result.name}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                       {[result.admin1, result.country].filter(Boolean).join(", ")}
                     </p>
                   </div>
@@ -288,26 +288,26 @@ export const WeatherMapWithLayers = ({
         )}
         
         {/* Selected Location Info Card */}
-        {selectedLocation && (
-          <div className="mt-2 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg p-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Map className="w-5 h-5 text-primary" />
+        {selectedLocation && !showSearchResults && (
+          <div className="mt-2 bg-card/95 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg p-3 sm:p-4">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg flex-shrink-0">
+                <Map className="w-4 h-4 text-primary" />
               </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-foreground">{selectedLocation.name}</h4>
-                <p className="text-sm text-muted-foreground">
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-sm text-foreground truncate">{selectedLocation.name}</h4>
+                <p className="text-xs text-muted-foreground truncate">
                   {[selectedLocation.admin1, selectedLocation.country].filter(Boolean).join(", ")}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-[10px] text-muted-foreground mt-0.5">
                   {selectedLocation.latitude.toFixed(4)}°, {selectedLocation.longitude.toFixed(4)}°
                 </p>
               </div>
               <button
                 onClick={clearSearch}
-                className="p-1 hover:bg-muted rounded-lg transition-colors"
+                className="p-1 hover:bg-muted rounded-lg transition-colors flex-shrink-0"
               >
-                <X className="w-4 h-4 text-muted-foreground" />
+                <X className="w-3.5 h-3.5 text-muted-foreground" />
               </button>
             </div>
           </div>
@@ -315,39 +315,39 @@ export const WeatherMapWithLayers = ({
       </div>
 
       {/* Control Buttons */}
-      <div className="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-[1000] flex flex-col gap-2">
         {onToggleFullscreen && (
           <Button
             variant="secondary"
             size="icon"
-            className="bg-card/90 backdrop-blur-xl border-border/50 shadow-xl hover:bg-card hover:scale-105 transition-all duration-200"
+            className="w-9 h-9 sm:w-10 sm:h-10 bg-card/90 backdrop-blur-xl border-border/50 shadow-xl hover:bg-card hover:scale-105 transition-all duration-200"
             onClick={onToggleFullscreen}
           >
-            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+            {isFullscreen ? <Minimize2 className="w-4 h-4 sm:w-5 sm:h-5" /> : <Maximize2 className="w-4 h-4 sm:w-5 sm:h-5" />}
           </Button>
         )}
         {userLocation && (
           <Button
             variant="secondary"
             size="icon"
-            className="bg-card/90 backdrop-blur-xl border-border/50 shadow-xl hover:bg-card hover:scale-105 transition-all duration-200"
+            className="w-9 h-9 sm:w-10 sm:h-10 bg-card/90 backdrop-blur-xl border-border/50 shadow-xl hover:bg-card hover:scale-105 transition-all duration-200"
             onClick={handleLocateMe}
             title="Center on my location"
           >
-            <Locate className="w-5 h-5" />
+            <Locate className="w-4 h-4 sm:w-5 sm:h-5" />
           </Button>
         )}
       </div>
 
-      {/* Layer Badge - Moved to center-top */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[999] pointer-events-none">
-        <div className="flex items-center gap-2 px-4 py-2.5 bg-card/90 backdrop-blur-xl border border-border/50 rounded-full shadow-xl">
-          <Map className="w-4 h-4 text-primary" />
-          <p className="text-sm font-medium text-foreground">
+      {/* Layer Badge - Hidden on small mobile, visible from sm */}
+      <div className="hidden sm:block absolute top-4 left-1/2 -translate-x-1/2 z-[999] pointer-events-none">
+        <div className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-card/90 backdrop-blur-xl border border-border/50 rounded-full shadow-xl">
+          <Map className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
+          <p className="text-xs sm:text-sm font-medium text-foreground whitespace-nowrap">
             {getLayerLabel()}
           </p>
           {showRadar && (
-            <span className="px-2 py-0.5 bg-primary/20 text-primary text-xs font-medium rounded-full">
+            <span className="px-1.5 sm:px-2 py-0.5 bg-primary/20 text-primary text-[10px] sm:text-xs font-medium rounded-full">
               +Radar
             </span>
           )}
