@@ -216,18 +216,20 @@ const Index = () => {
       <main className={`flex-1 ${isMapFullscreen ? 'p-0' : 'p-6 md:p-8'} space-y-6 overflow-auto`}>
         {/* Header with Location and Search - Hidden in fullscreen mode */}
         {!isMapFullscreen && (
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-primary" />
-              <div>
-                <h2 className="text-2xl font-bold">{locationName || "Loading location..."}</h2>
-                <p className="text-sm text-muted-foreground">
-                  {location.lat.toFixed(4)}°, {location.lon.toFixed(4)}°
-                </p>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <MapPin className="w-4 sm:w-5 h-4 sm:h-5 text-primary flex-shrink-0" />
+                <div className="min-w-0">
+                  <h2 className="text-lg sm:text-2xl font-bold truncate">{locationName || "Loading location..."}</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    {location.lat.toFixed(4)}°, {location.lon.toFixed(4)}°
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="max-w-md w-full md:w-auto">
-              <SearchBox onSearch={handleSearch} onLocationSelect={handleLocationSelect} />
+              <div className="w-full sm:w-auto sm:max-w-xs md:max-w-md flex-shrink-0">
+                <SearchBox onSearch={handleSearch} onLocationSelect={handleLocationSelect} />
+              </div>
             </div>
           </div>
         )}
